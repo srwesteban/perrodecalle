@@ -5,6 +5,7 @@ function Nequi() {
       <button className="mt-2 bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-lg">
         Donar con Nequi
       </button>
+      <p className="font-bold">Tu donacion se vera reflejada en 24hrs</p>
     </div>
   );
 }
