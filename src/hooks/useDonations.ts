@@ -1,4 +1,3 @@
-// src/hooks/useDonations.ts
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -17,35 +16,29 @@ export function useDonations(limit = 50) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("donations")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
-      setRows((data as Donation[]) || []);
+      if (!error && data) setRows(data as Donation[]);
     })();
 
     const ch = supabase
       .channel("donations")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "donations" },
-        (payload) => {
-          setRows((prev) => {
-            const next = [...prev];
-            const row = payload.new as Donation;
-            const i = next.findIndex((r) => r.id === row.id);
-            if (i >= 0) next[i] = row;
-            else next.unshift(row);
-            return next.slice(0, limit);
-          });
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "donations" }, (payload) => {
+        setRows((prev) => {
+          const next = [...prev];
+          const row = payload.new as Donation;
+          const i = next.findIndex((r) => r.id === row.id);
+          if (i >= 0) next[i] = row;
+          else next.unshift(row);
+          return next.slice(0, limit);
+        });
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    return () => { supabase.removeChannel(ch); };
   }, [limit]);
 
   return rows;

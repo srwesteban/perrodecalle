@@ -1,24 +1,29 @@
-// src/components/ProgressBar.tsx
 import { useMemo } from "react";
 import { useDonations } from "../hooks/useDonations";
 
-export default function ProgressBar({ goal = 1000000 }: { goal?: number }) {
-  const rows = useDonations();
-  const total = useMemo(
-    () => rows.filter(r => r.status === "APPROVED").reduce((s, r) => s + (r.amount_in_cents ?? 0), 0),
-    [rows]
-  );
+type Props = {
+  current?: number;
+  goal: number;
+};
+
+export default function ProgressBar({ current, goal }: Props) {
+  const rows = useDonations(200);
+  const total = useMemo(() => {
+    if (typeof current === "number") return current;
+    return rows.filter(r => r.status === "APPROVED").reduce((s, r) => s + (r.amount_in_cents ?? 0), 0);
+  }, [rows, current]);
+
   const pct = Math.min(100, Math.round((total / goal) * 100));
 
   return (
-    <div className="p-4 rounded-xl border border-red-500">
-      <div className="flex justify-between text-sm mb-1">
-        <span>Meta: ${ (goal/100).toLocaleString("es-CO") }</span>
-        <span>Recaudado: ${ (total/100).toLocaleString("es-CO") } ({pct}%)</span>
+    <div>
+      <p className="mb-2 font-bold">Meta de donaciones</p>
+      <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+        <div className="bg-blue-500 h-4 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
-      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-        <div className="h-full bg-emerald-600" style={{ width: `${pct}%` }} />
-      </div>
+      <p className="mt-2 text-sm text-gray-400">
+        ${(total / 100).toLocaleString("es-CO")} / ${(goal / 100).toLocaleString("es-CO")} ({pct}%)
+      </p>
     </div>
   );
 }

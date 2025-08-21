@@ -1,7 +1,11 @@
-// src/lib/supabase.ts
 import { createClient } from "@supabase/supabase-js";
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,       // https://xyvch...supabase.co
-  import.meta.env.VITE_SUPABASE_ANON_KEY!   // tu anon key
-);
+const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+
+if (!url || !anon) {
+  console.error("Faltan variables:", { hasUrl: !!url, hasAnon: !!anon });
+  throw new Error("VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY no están definidas");
+}
+
+export const supabase = createClient(url, anon);
