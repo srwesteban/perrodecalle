@@ -1,13 +1,16 @@
-function Wompi() {
+import WompiButton from "./Wompibutton";
+
+export default function Wompi() {
+  const ref = `DON-${Date.now()}`; // genera referencias únicas
+
   return (
-    <div className="flex flex-col items-center">
-      <p className="font-bold">💳 Wompi</p>
-      <button className="mt-2 bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg">
-        Donar con Wompi
-      </button>
-      <p className="font-bold">Tu donacion se vera reflejada inmediatamente</p>
+    <div className="space-y-2">
+      <h3 className="font-semibold">Donar</h3>
+      <WompiButton
+        amountInCents={500000}        // $5.000 COP
+        reference={ref}
+        redirectUrl={window.location.origin + "/gracias"}
+      />
     </div>
   );
 }
-
-export default Wompi;
