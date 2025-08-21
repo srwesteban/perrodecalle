@@ -5,9 +5,10 @@ import Stats from './components/Stats';
 import LiveVideo from './components/LiveVideo';
 import Wompi from './streaming/paymentGateway/components/Wompi';
 import MediaFeed from './components/MediaFeed';
-import Nequi from './streaming/paymentGateway/components/Nequi';
 import ProgressBar from './components/ProgressBar';
 import Historial from './components/Historial';
+import NequiSimulado from './streaming/paymentGateway/components/NequiSimulado';
+
 
 function App() {
   return (
@@ -37,7 +38,7 @@ function App() {
 
               {/* ProgressBar */}
               <div className="border-2 border-red-500 p-2">
-                <ProgressBar current={42000} goal={100000} />
+                <ProgressBar goal={1000000} />
               </div>
 
               {/* Subfila 2: Wompi + Nequi */}
@@ -46,7 +47,7 @@ function App() {
                   <Wompi />
                 </div>
                 <div className="border-2 border-red-500 p-2">
-                  <Nequi />
+                  <NequiSimulado />
                 </div>
               </div>
             </div>
