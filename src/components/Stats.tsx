@@ -22,6 +22,7 @@ function Stats() {
   return (
     <div className="text-white text-2xl font-bold">
       <VisitsCounter />
+      {visitas !== null && <p>Total visitas: {visitas}</p>}
     </div>
   );
 }
