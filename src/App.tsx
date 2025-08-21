@@ -4,9 +4,9 @@ import Overlay from './components/Overlay';
 import Stats from './components/Stats';
 import LiveVideo from './components/LiveVideo';
 import ProgressBar from './components/ProgressBar';
-import Wompi from './components/Wompi';
-import Nequi from './components/Nequi';
+import Wompi from './streaming/paymentGateway/components/Wompi';
 import MediaFeed from './components/MediaFeed';
+import Nequi from './streaming/paymentGateway/components/Nequi';
 import Historial from './components/Historial';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
 
         {/* Fila 1 - Stats */}
         <section className="border-2 border-red-500 p-4 w-full">
-          <Stats views={12345} />
+          <Stats/>
         </section>
 
         {/* Fila 2 */}
