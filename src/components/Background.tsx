@@ -1,20 +1,20 @@
 import Particles from "./Particles";
-import fondo from "../assets/img/dog.jpg"; // 👈 importa la imagen
+import fondo from "../assets/img/dog.jpg"; 
 
 function Background() {
   return (
     <div
       style={{
         width: "100%",
-        height: "100vh", // 👈 ahora ocupa toda la pantalla
+        height: "100vh",
         position: "absolute",
         top: 0,
         left: 0,
-        backgroundImage: `url(${fondo})`, // 👈 corregido
-        backgroundSize: "cover",          // ajusta la imagen al tamaño de la pantalla
-        backgroundPosition: "center",     // centra la imagen
+        backgroundImage: `url(${fondo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        zIndex: -1, // para que quede detrás
+        zIndex: -1,
       }}
     >
       <Particles
