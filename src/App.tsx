@@ -3,10 +3,10 @@ import Background from './components/Background';
 import Overlay from './components/Overlay';
 import Stats from './components/Stats';
 import LiveVideo from './components/LiveVideo';
-import ProgressBar from './components/ProgressBar';
 import Wompi from './streaming/paymentGateway/components/Wompi';
 import MediaFeed from './components/MediaFeed';
 import Nequi from './streaming/paymentGateway/components/Nequi';
+import ProgressBar from './components/ProgressBar';
 import Historial from './components/Historial';
 
 function App() {

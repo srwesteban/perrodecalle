@@ -14,7 +14,7 @@ function VisitsCounter() {
 
   return (
     <div className="text-white text-xl font-bold">
-      👀 Visitas totales: {visits !== null ? visits : "Cargando..."}
+      👀 AHHH Visitas totales: {visits !== null ? visits : "Cargando..."}
     </div>
   );
 }
