@@ -1,12 +1,27 @@
-type Props = {
-  views: number;
-};
+import { useEffect, useState } from "react";
+import VisitsCounter from "./VisitsCounter";
 
-function Stats({ views }: Props) {
+function Stats() {
+  const [visitas, setVisitas] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/analytics")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.rows) {
+          const total = data.rows.reduce(
+            (acc: number, row: any) =>
+              acc + parseInt(row.metricValues[0].value, 10),
+            0
+          );
+          setVisitas(total);
+        }
+      });
+  }, []);
+
   return (
-    <div className="flex flex-col items-center">
-      <p className="text-2xl font-bold">👀 {views.toLocaleString()}</p>
-      <p className="text-sm text-gray-300">Visitas a la página</p>
+    <div className="text-white text-2xl font-bold">
+      <VisitsCounter />
     </div>
   );
 }
