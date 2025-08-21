@@ -1,3 +1,4 @@
+///Users/williamesteban/Desktop/perro-de-calle/src/components/ProgressBar.tsx
 import { useDonations } from "../hooks/useDonations";
 
 export default function ProgressBar({ goal }: { goal: number }) {

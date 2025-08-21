@@ -5,7 +5,7 @@ export type Donation = {
   id: string;
   reference: string;
   amount_in_cents: number;
-  amount_cop: number; // ya en COP desde la BD (columna generada)
+  amount_cop: number; // columna generada en COP
   currency: string;
   status: "PENDING" | "APPROVED" | "DECLINED" | "VOIDED" | "ERROR";
   created_at: string;
@@ -45,19 +45,16 @@ export function useDonations(limit = 50) {
 
     load();
 
+    // Realtime SIN filtro: filtramos en el callback
     const ch = supabase
       .channel("donations-realtime")
-      // Solo INSERTS que ya llegan como APPROVED
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "donations",
-          filter: "status=eq.APPROVED",
-        },
+        { event: "INSERT", schema: "public", table: "donations" },
         (payload: any) => {
           const row = payload.new as Donation;
+          if (row.status !== "APPROVED") return; // solo aprobadas
+
           setRows((prev) => [
             {
               ...row,
@@ -68,35 +65,40 @@ export function useDonations(limit = 50) {
           ].slice(0, limit));
         }
       )
-      // Y UPDATES que terminan en APPROVED (ej: PENDING -> APPROVED)
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "donations",
-          filter: "status=eq.APPROVED",
-        },
+        { event: "UPDATE", schema: "public", table: "donations" },
         (payload: any) => {
           const row = payload.new as Donation;
-          setRows((prev) =>
-            prev.map((r) =>
-              r.id === row.id
-                ? {
-                    ...row,
-                    amount_in_cents: Number((row as any).amount_in_cents),
-                    amount_cop: Number((row as any).amount_cop),
-                  }
-                : r
-            )
-          );
+          if (row.status !== "APPROVED") return;
+
+          setRows((prev) => {
+            const idx = prev.findIndex((r) => r.id === row.id);
+            const normalized = {
+              ...row,
+              amount_in_cents: Number((row as any).amount_in_cents),
+              amount_cop: Number((row as any).amount_cop),
+            };
+            if (idx === -1) return [normalized, ...prev].slice(0, limit);
+            const copy = prev.slice();
+            copy[idx] = normalized;
+            return copy;
+          });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Descomenta para depurar suscripción
+        // console.log("Realtime status:", status);
+      });
+
+    // Fallback: escuchar un evento del navegador para forzar reload puntual
+    const forceReload = () => load();
+    window.addEventListener("donation:inserted", forceReload);
 
     return () => {
       cancelled = true;
       supabase.removeChannel(ch);
+      window.removeEventListener("donation:inserted", forceReload);
     };
   }, [limit]);
 

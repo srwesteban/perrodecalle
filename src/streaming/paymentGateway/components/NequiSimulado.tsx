@@ -28,6 +28,8 @@ export default function NequiSimulado() {
     } else {
       console.log("✅ Insert ok:", data);
       setMsg(`✅ Donación simulada: ${data.reference}`);
+      // Fallback: avisar al hook para recargar por si no llegó el evento Realtime
+      window.dispatchEvent(new Event("donation:inserted"));
     }
 
     setLoading(false);
