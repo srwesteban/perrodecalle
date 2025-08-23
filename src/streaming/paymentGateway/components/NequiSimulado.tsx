@@ -50,7 +50,7 @@ export default function NequiSimulado() {
         disabled={loading}
         className="w-full px-3 py-2 rounded bg-purple-600 disabled:opacity-60"
       >
-        {loading ? "Simulando..." : "Simular Nequi"}
+        {loading ? "Simulando..." : "Simular Donacion"}
       </button>
       {msg && <p className="text-xs text-gray-300">{msg}</p>}
     </div>

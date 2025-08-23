@@ -44,7 +44,7 @@ function App() {
               </div>
 
               {/* Subfila 2: Wompi + Nequi */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-black/40 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="border-2 border-red-500 p-2">
                   <Wompi />
                 </div>

@@ -58,13 +58,13 @@ export default function FeedDogCard({ dog }: { dog: DogStats }) {
         className={`w-full px-4 py-2 rounded-xl font-semibold transition
           ${locked ? "bg-emerald-600/60 cursor-not-allowed" : "bg-blue-600 hover:opacity-90 text-white"}`}
       >
-        {locked ? "¡Alimentado!" : opening ? "Abriendo…" : `Alimentar a ${dog.name}`}
+        {locked ? "¡Alimentado!" : opening ? "Abriendo…" : `Alimentar a ${dog.name} este mes`}
       </button>
 
-      <div className="flex items-center justify-between text-xs text-gray-400">
+      {/* <div className="flex items-center justify-between text-xs text-gray-400">
         <span>Alimentado: {dog.feeds} veces</span>
         <span>Recaudado: ${nf.format(dog.raised_cop)} COP</span>
-      </div>
+      </div> */}
     </div>
   );
 }
