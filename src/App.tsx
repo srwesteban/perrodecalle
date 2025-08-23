@@ -8,7 +8,6 @@ import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
-import DonateWithBold from "./components/DonateWithBold";
 import FeedGrid from "./components/FeedGrid";
 
 function App() {
@@ -44,12 +43,10 @@ function App() {
                 <div className="border-2 border-red-500 p-2">
                   <Wompi />
                 </div>
-                <div className="border-2 border-red-500 p-2">
+                {/* <div className="border-2 border-red-500 p-2">
                   <NequiSimulado />
-                </div>
-                <div className="border-2 border-red-500 p-2">
-                  <DonateWithBold />
-                </div>
+                </div> */}
+
                 <div className="border-2 border-red-500 p-2">
                   <FeedGrid />
                 </div>

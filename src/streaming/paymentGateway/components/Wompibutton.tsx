@@ -1,12 +1,21 @@
 import { useEffect, useRef } from "react";
 
 type Props = {
-  amountInCents: number;        // en centavos
+  amountInCents: number;  // en centavos
   currency?: "COP";
   reference: string;
   redirectUrl?: string;
-  expirationTimeISO?: string;   // opcional
+  expirationTimeISO?: string;
 };
+
+function formatCOPFromCents(cents: number) {
+  const pesos = Math.round(cents / 100);
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(pesos);
+}
 
 export default function WompiButton({
   amountInCents,
@@ -19,7 +28,6 @@ export default function WompiButton({
 
   useEffect(() => {
     (async () => {
-      // 1) pide firma al backend
       const r = await fetch("/api/wompi/integrity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,12 +35,11 @@ export default function WompiButton({
           reference,
           amountInCents,
           currency,
-          expirationTime: expirationTimeISO, // debe coincidir
+          expirationTime: expirationTimeISO,
         }),
       });
       const { integrity } = await r.json();
 
-      // 2) carga el widget una sola vez
       if (!document.querySelector('script[src="https://checkout.wompi.co/widget.js"]')) {
         const s = document.createElement("script");
         s.src = "https://checkout.wompi.co/widget.js";
@@ -40,10 +47,9 @@ export default function WompiButton({
         await new Promise((ok) => (s.onload = ok));
       }
 
-      // 3) asigna handler al botón
       if (btnRef.current) {
         btnRef.current.onclick = () => {
-          // @ts-ignore – lib global
+          // @ts-ignore
           const checkout = new WidgetCheckout({
             currency,
             amountInCents,
@@ -66,7 +72,7 @@ export default function WompiButton({
       ref={btnRef}
       className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
     >
-      Donar con Wompi
+      {formatCOPFromCents(amountInCents)} {/* 👈 solo el valor */}
     </button>
   );
 }
