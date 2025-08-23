@@ -4,7 +4,7 @@ export default function Historial() {
   const rows = useDonations(50);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 bg-black">
       <p className="font-bold">📜 Historial de Donaciones</p>
       <ul className="space-y-1 text-sm text-gray-300 max-h-80 overflow-auto pr-2">
         {rows.map(r => (
