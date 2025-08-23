@@ -1,5 +1,17 @@
+// /api/bold/webhook.ts
+
 export const config = {
   runtime: "nodejs",
+};
+
+type BoldEvent = {
+  type?: string;
+  subject?: string;
+  data?: {
+    payment_id?: string;
+    amount?: { total?: number | null } | null;
+    metadata?: { reference?: string | null } | null;
+  };
 };
 
 export default async function handler(req: any, res: any) {
@@ -13,9 +25,9 @@ export default async function handler(req: any, res: any) {
   const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   try {
-    const payload = req.body;
+    const payload = req.body as BoldEvent;
 
-    // Mapear tipo de evento
+    // 1) Mapear tipo de evento de Bold -> nuestro estado
     let status: string | null = null;
     switch (payload?.type) {
       case "SALE_APPROVED":
@@ -34,12 +46,25 @@ export default async function handler(req: any, res: any) {
         status = payload?.type || "PENDING";
     }
 
-    const reference = payload?.data?.metadata?.reference ?? null;
-    const amount_in_cents = payload?.data?.amount?.total ?? null;
-    const currency = "COP";
-    const tx_id = payload?.data?.payment_id ?? payload?.subject ?? null;
+    // 2) Normalizar monto: Bold (COP) suele enviar "total" en pesos
+    const rawTotal = payload?.data?.amount?.total ?? null;
+    const toCentsCOP = (v: number | null) => {
+      if (v == null) return null;
+      // si parece venir en pesos (valor pequeño), llévalo a centavos
+      if (v > 0 && v < 5_000_000) return v * 100; // 1.000 -> 100.000
+      return v; // por si algún día ya viene en centavos
+    };
+    const amount_in_cents = toCentsCOP(rawTotal);
 
-    // Insertar evento crudo para depurar
+    const reference =
+      payload?.data?.metadata?.reference?.toString() ?? null;
+    const currency = "COP";
+    const tx_id =
+      payload?.data?.payment_id?.toString() ??
+      payload?.subject?.toString() ??
+      null;
+
+    // 3) Guardar evento crudo para auditoría
     await fetch(`${SUPABASE_URL}/rest/v1/bold_events`, {
       method: "POST",
       headers: {
@@ -59,26 +84,29 @@ export default async function handler(req: any, res: any) {
       }),
     });
 
-    // Upsert en donations
+    // 4) Upsert en donations (clave: reference)
     if (reference) {
-      await fetch(`${SUPABASE_URL}/rest/v1/donations?on_conflict=reference`, {
-        method: "POST",
-        headers: {
-          apikey: SRV,
-          Authorization: `Bearer ${SRV}`,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal",
-        },
-        body: JSON.stringify({
-          reference,
-          status,
-          amount_in_cents,
-          currency,
-          tx_id,
-          provider: "bold",
-          updated_at: new Date().toISOString(),
-        }),
-      });
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/donations?on_conflict=reference`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SRV,
+            Authorization: `Bearer ${SRV}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify({
+            reference,
+            status,
+            amount_in_cents,
+            currency,
+            tx_id,
+            provider: "bold",
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
     }
 
     res.statusCode = 200;

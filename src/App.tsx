@@ -9,6 +9,7 @@ import ProgressBar from './components/ProgressBar';
 import Historial from './components/Historial';
 import NequiSimulado from './streaming/paymentGateway/components/NequiSimulado';
 import DonateWithBold from './components/DonateWithBold';
+import FeedGrid from './components/FeedGrid';
 
 
 function App() {
@@ -52,6 +53,9 @@ function App() {
                 </div>
                 <div className="border-2 border-red-500 p-2">
                   <DonateWithBold/>
+                </div>
+                <div className="border-2 border-red-500 p-2">
+                  <FeedGrid/>
                 </div>
               </div>
             </div>
