@@ -11,6 +11,7 @@ import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 import DonateWithBold from "./components/DonateWithBold";
 import FeedGrid from "./components/FeedGrid";
 import WompiPayButton from "./components/WompiPayButton";
+import WompiTest1000 from "./components/WompiTest1000";
 
 function App() {
   return (
@@ -53,6 +54,13 @@ function App() {
                 </div>
                 <div className="border-2 border-red-500 p-2">
                   <WompiPayButton amountCOP={1000} />
+                </div>
+                <div>
+                  {/* 🔥 Botón ÚNICO de prueba */}
+                  <WompiTest1000 />
+
+                  {/* ⛔️ Mientras pruebas, comenta/oculta todos los otros botones de pago */}
+                  {/* <OtrosBotonesDePago /> */}
                 </div>
                 <div className="border-2 border-red-500 p-2">
                   <FeedGrid />

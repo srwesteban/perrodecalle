@@ -3,10 +3,15 @@ export const config = { runtime: "edge" };
 
 type WompiEvent = {
   event?: string;
-  data?: { transaction?: {
-    id?: string; reference?: string; amount_in_cents?: number;
-    currency?: string; status?: "PENDING"|"APPROVED"|"DECLINED"|"VOIDED"|"ERROR";
-  }};
+  data?: {
+    transaction?: {
+      id?: string;
+      reference?: string;
+      amount_in_cents?: number;
+      currency?: string;
+      status?: "PENDING"|"APPROVED"|"DECLINED"|"VOIDED"|"ERROR";
+    };
+  };
 };
 
 export default async function handler(req: Request): Promise<Response> {
@@ -21,9 +26,9 @@ export default async function handler(req: Request): Promise<Response> {
     const tx = payload?.data?.transaction;
     if (!tx?.reference) return new Response("no reference", { status: 400 });
 
-    // (opcional) validar firma con WOMPI_EVENTS_SECRET
+    // (opcional) validar firma del webhook con WOMPI_EVENTS_SECRET aquí
 
-    // UPSERT por reference para mimetizar Bold
+    // UPSERT por 'reference'
     const r = await fetch(`${supabaseUrl}/rest/v1/donations`, {
       method: "POST",
       headers: {
@@ -33,12 +38,12 @@ export default async function handler(req: Request): Promise<Response> {
         Prefer: "resolution=merge-duplicates,return=representation",
       },
       body: JSON.stringify({
-        provider: "wompi",
         reference: tx.reference,
         status: tx.status,
         tx_id: tx.id,
         amount_in_cents: tx.amount_in_cents,
         currency: tx.currency ?? "COP",
+        provider: "wompi", // quítalo si no existe la columna
       }),
     });
 
@@ -47,6 +52,7 @@ export default async function handler(req: Request): Promise<Response> {
       console.error("Supabase UPSERT error:", t);
       return new Response("db error", { status: 500 });
     }
+
     return new Response("ok", { status: 200 });
   } catch (e) {
     console.error("webhook error:", e);
