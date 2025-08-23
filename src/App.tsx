@@ -10,8 +10,6 @@ import Historial from "./components/Historial";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 import DonateWithBold from "./components/DonateWithBold";
 import FeedGrid from "./components/FeedGrid";
-import WompiPayButton from "./components/WompiPayButton";
-import WompiTest1000 from "./components/WompiTest1000";
 
 function App() {
   return (

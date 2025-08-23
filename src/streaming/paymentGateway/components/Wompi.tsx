@@ -1,15 +1,16 @@
+import { useMemo } from "react";
 import WompiButton from "./Wompibutton";
 
 export default function Wompi() {
-  const ref = `DON-${Date.now()}`; // genera referencias únicas
+  const reference = useMemo(() => `DON-${Date.now()}`, []); // ✅ estable
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold">Donar</h3>
+      <h3 className="font-semibold">Este es el botón real de Wompi Donar</h3>
       <WompiButton
-        amountInCents={150000}        // $5.000 COP
-        reference={ref}
-        redirectUrl={window.location.origin + "/gracias"}
+        amountInCents={500000}  // ver punto 2
+        reference={reference}
+        redirectUrl={`${window.location.origin}/gracias`}
       />
     </div>
   );
