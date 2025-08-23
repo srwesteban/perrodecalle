@@ -53,9 +53,6 @@ function App() {
                   <DonateWithBold />
                 </div>
                 <div className="border-2 border-red-500 p-2">
-                  <WompiPayButton amountCOP={1000} />
-                </div>
-                <div className="border-2 border-red-500 p-2">
                   <FeedGrid />
                 </div>
               </div>
