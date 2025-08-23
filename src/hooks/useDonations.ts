@@ -1,106 +1,87 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-export type Donation = {
+// Usa las mismas envs que ya tienes en el proyecto
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
+
+type Donation = {
   id: string;
   reference: string;
+  status: "APPROVED" | "DECLINED" | "VOIDED" | "PENDING" | string;
   amount_in_cents: number;
-  amount_cop: number; // columna generada en COP
-  currency: string;
-  status: "PENDING" | "APPROVED" | "DECLINED" | "VOIDED" | "ERROR";
+  updated_at: string | null;
   created_at: string;
-  tx_id: string | null;
 };
 
 export function useDonations(limit = 50) {
   const [rows, setRows] = useState<Donation[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    async function load() {
-      const { data, error } = await supabase
-        .from("donations")
-        .select(
-          "id, reference, amount_in_cents, amount_cop, currency, status, created_at, tx_id"
-        )
-        .order("created_at", { ascending: false })
-        .limit(limit);
+    // carga inicial
+    supabase
+      .from("donations")
+      .select("id,reference,status,amount_in_cents,updated_at,created_at")
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(limit)
+      .then(({ data, error }) => {
+        if (mounted && !error) setRows(data ?? []);
+      });
 
-      if (cancelled) return;
-
-      if (error) {
-        console.error("Supabase SELECT error:", error);
-        setRows([]);
-      } else {
-        setRows(
-          (data ?? []).map((d: any) => ({
-            ...d,
-            amount_in_cents: Number(d.amount_in_cents),
-            amount_cop: Number(d.amount_cop),
-          }))
-        );
-      }
-    }
-
-    load();
-
-    // Realtime SIN filtro: filtramos en el callback
-    const ch = supabase
+    // suscripción realtime (INSERT/UPDATE/DELETE)
+    const channel = supabase
       .channel("donations-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "donations" },
-        (payload: any) => {
-          const row = payload.new as Donation;
-          if (row.status !== "APPROVED") return; // solo aprobadas
-
-          setRows((prev) => [
-            {
-              ...row,
-              amount_in_cents: Number((row as any).amount_in_cents),
-              amount_cop: Number((row as any).amount_cop),
-            },
-            ...prev,
-          ].slice(0, limit));
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "donations" },
-        (payload: any) => {
-          const row = payload.new as Donation;
-          if (row.status !== "APPROVED") return;
+        { event: "*", schema: "public", table: "donations" },
+        (payload) => {
+          const rec: Donation =
+            (payload.new as Donation) ??
+            (payload.old as Donation);
 
           setRows((prev) => {
-            const idx = prev.findIndex((r) => r.id === row.id);
-            const normalized = {
-              ...row,
-              amount_in_cents: Number((row as any).amount_in_cents),
-              amount_cop: Number((row as any).amount_cop),
-            };
-            if (idx === -1) return [normalized, ...prev].slice(0, limit);
-            const copy = prev.slice();
-            copy[idx] = normalized;
-            return copy;
+            if (payload.eventType === "DELETE") {
+              return prev.filter((r) => r.id !== rec.id).slice(0, limit);
+            }
+
+            // upsert por id o referencia
+            const i = prev.findIndex(
+              (r) => r.id === rec.id || r.reference === rec.reference
+            );
+            const next = i >= 0 ? [...prev] : [rec, ...prev];
+            if (i >= 0) next[i] = rec;
+
+            next.sort((a, b) => {
+              const ta = new Date(a.updated_at ?? a.created_at).getTime();
+              const tb = new Date(b.updated_at ?? b.created_at).getTime();
+              return tb - ta;
+            });
+
+            return next.slice(0, limit);
           });
         }
       )
-      .subscribe((status) => {
-        // Descomenta para depurar suscripción
-        // console.log("Realtime status:", status);
-      });
-
-    // Fallback: escuchar un evento del navegador para forzar reload puntual
-    const forceReload = () => load();
-    window.addEventListener("donation:inserted", forceReload);
+      .subscribe();
 
     return () => {
-      cancelled = true;
-      supabase.removeChannel(ch);
-      window.removeEventListener("donation:inserted", forceReload);
+      mounted = false;
+      supabase.removeChannel(channel);
     };
   }, [limit]);
 
-  return rows;
+  // pequeña optimización de formateo
+  const formatted = useMemo(() => {
+    const nf = new Intl.NumberFormat("es-CO");
+    return rows.map((r) => ({
+      ...r,
+      amountFormatted: `$${nf.format((r.amount_in_cents ?? 0) / 100)}`,
+    }));
+  }, [rows]);
+
+  return formatted;
 }

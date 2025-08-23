@@ -1,11 +1,8 @@
-type Props = {
-  href?: string; // por si luego cambias el link desde .env
-  label?: string;
-};
+type Props = { href?: string; label?: string };
 
 export default function DonateWithBold({
-  href = "https://checkout.bold.co/payment/LNK_FKIMP8KWED",
-  label = "Donar con Bold",
+  href = "https://checkout.bold.co/payment/LNK_6NV2L6HA8U", // <-- tu link nuevo
+  label = "Donar $1.000",
 }: Props) {
   const openPopup = () => {
     const w = window.open(
@@ -13,15 +10,9 @@ export default function DonateWithBold({
       "bold_checkout",
       "width=480,height=720,menubar=no,toolbar=no,location=no,status=no"
     );
-
-    // Opcional: detectar cuando el popup se cierra para refrescar donaciones
-    const timer = setInterval(() => {
-      if (!w || w.closed) {
-        clearInterval(timer);
-        // aquí podrías disparar un refetch() de tus donaciones
-        console.log("Popup cerrado, refrescar donaciones");
-      }
-    }, 1000);
+    const t = setInterval(() => {
+      if (!w || w.closed) clearInterval(t);
+    }, 800);
   };
 
   return (
