@@ -1,51 +1,58 @@
 // src/streaming/paymentGateway/components/NequiSimulado.tsx
-import { supabase } from "../../../lib/supabase";
 import { useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
 export default function NequiSimulado() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function simular() {
-    setLoading(true);
+  const sim = async () => {
     setMsg(null);
+    setLoading(true);
+    const ref = `sim-${Date.now()}`;
 
-    const { data, error } = await supabase
-      .from("donations")
-      .insert({
-        reference: `TEST-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
-        amount_in_cents: 250000, // $2.500 COP
-        currency: "COP",
-        status: "APPROVED",
-        tx_id: null,
-      })
-      .select("id, reference, amount_in_cents, amount_cop, status")
-      .single();
+    try {
+      // INSERT PENDING
+      const { error: insErr } = await supabase.from("donations").insert({
+        reference: ref,
+        status: "PENDING",           // enum válido: PENDING
+        amount_in_cents: 150000,     // $1.500
+        provider: "sim",
+      });
+      if (insErr) throw insErr;
 
-    if (error) {
-      console.error("Supabase INSERT error:", error);
-      setMsg("❌ Error insertando en Supabase (abre la consola para detalles).");
-    } else {
-      console.log("✅ Insert ok:", data);
-      setMsg(`✅ Donación simulada: ${data.reference}`);
-      // Fallback: avisar al hook para recargar por si no llegó el evento Realtime
-      window.dispatchEvent(new Event("donation:inserted"));
+      // UPDATE a APPROVED después de 2s
+      setTimeout(async () => {
+        const { error: updErr } = await supabase
+          .from("donations")
+          .update({ status: "APPROVED" }) // enum válido: APPROVED
+          .eq("reference", ref);
+
+        setLoading(false);
+        if (updErr) {
+          setMsg(`Update error: ${updErr.message}`);
+          console.error(updErr);
+        } else {
+          setMsg(`OK: ${ref} → APPROVED`);
+        }
+      }, 2000);
+    } catch (e: any) {
+      setLoading(false);
+      setMsg(`Insert error: ${e?.message || e}`);
+      console.error(e);
     }
-
-    setLoading(false);
-  }
+  };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <p className="font-bold">📱 Nequi (simulación)</p>
+    <div className="flex flex-col gap-2">
       <button
+        onClick={sim}
         disabled={loading}
-        onClick={simular}
-        className="bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-lg disabled:opacity-50"
+        className="w-full px-3 py-2 rounded bg-purple-600 disabled:opacity-60"
       >
-        {loading ? "Insertando..." : "Simular donación $2.500"}
+        {loading ? "Simulando..." : "Simular Nequi"}
       </button>
-      {msg && <p className="text-sm text-gray-200">{msg}</p>}
+      {msg && <p className="text-xs text-gray-300">{msg}</p>}
     </div>
   );
 }

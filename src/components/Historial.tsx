@@ -34,5 +34,4 @@ function HistorialBase() {
     </div>
   );
 }
-
 export default memo(HistorialBase);

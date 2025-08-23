@@ -1,55 +1,51 @@
-import { useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-// Usa las mismas envs que ya tienes en el proyecto
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
-
-type Donation = {
+export type Donation = {
   id: string;
   reference: string;
   status: "APPROVED" | "DECLINED" | "VOIDED" | "PENDING" | string;
-  amount_in_cents: number;
+  amount_in_cents: number | null;
   updated_at: string | null;
   created_at: string;
 };
 
+const NF = new Intl.NumberFormat("es-CO");
+
 export function useDonations(limit = 50) {
   const [rows, setRows] = useState<Donation[]>([]);
+  const lastFetch = useRef<number>(0);
 
-  useEffect(() => {
-    let mounted = true;
-
-    // carga inicial
-    supabase
+  async function fetchLatest() {
+    lastFetch.current = Date.now();
+    const { data } = await supabase
       .from("donations")
       .select("id,reference,status,amount_in_cents,updated_at,created_at")
       .order("updated_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
-      .limit(limit)
-      .then(({ data, error }) => {
-        if (mounted && !error) setRows(data ?? []);
-      });
+      .limit(limit);
+    setRows((data ?? []).slice(0, limit));
+  }
 
-    // suscripción realtime (INSERT/UPDATE/DELETE)
-    const channel = supabase
+  useEffect(() => {
+    let alive = true;
+
+    // 1) carga inicial
+    fetchLatest();
+
+    // 2) realtime
+    const ch = supabase
       .channel("donations-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "donations" },
         (payload) => {
-          const rec: Donation =
-            (payload.new as Donation) ??
-            (payload.old as Donation);
+          const rec = (payload.new ?? payload.old) as Donation;
 
           setRows((prev) => {
             if (payload.eventType === "DELETE") {
-              return prev.filter((r) => r.id !== rec.id).slice(0, limit);
+              return prev.filter((r) => r.id !== rec.id);
             }
-
-            // upsert por id o referencia
             const i = prev.findIndex(
               (r) => r.id === rec.id || r.reference === rec.reference
             );
@@ -61,27 +57,34 @@ export function useDonations(limit = 50) {
               const tb = new Date(b.updated_at ?? b.created_at).getTime();
               return tb - ta;
             });
-
             return next.slice(0, limit);
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // si por alguna razón falla la suscripción, hacemos fetch
+        if (status === "SUBSCRIBED") return;
+        fetchLatest();
+      });
+
+    // 3) fallback de *polling* cada 3s si no hubo eventos
+    const poll = setInterval(() => {
+      if (Date.now() - lastFetch.current > 3000) fetchLatest();
+    }, 3000);
 
     return () => {
-      mounted = false;
-      supabase.removeChannel(channel);
+      alive = false;
+      clearInterval(poll);
+      supabase.removeChannel(ch);
     };
   }, [limit]);
 
-  // pequeña optimización de formateo
-  const formatted = useMemo(() => {
-    const nf = new Intl.NumberFormat("es-CO");
-    return rows.map((r) => ({
-      ...r,
-      amountFormatted: `$${nf.format((r.amount_in_cents ?? 0) / 100)}`,
-    }));
-  }, [rows]);
-
-  return formatted;
+  return useMemo(
+    () =>
+      rows.map((r) => ({
+        ...r,
+        amountFormatted: `$${NF.format((r.amount_in_cents ?? 0) / 100)}`,
+      })),
+    [rows]
+  );
 }

@@ -2,17 +2,14 @@ import { useMemo } from "react";
 import { useDonations } from "../hooks/useDonations";
 
 export default function ProgressBar({ goal }: { goal: number }) {
-  // goal en COP (p. ej. 1_000_000)
-  const donations = useDonations(); // trae amount_in_cents
+  const rows = useDonations();
 
   const { totalCOP, pct } = useMemo(() => {
-    const total = donations
+    const total = rows
       .filter((d) => d.status === "APPROVED")
-      .reduce((acc, d) => acc + ((d.amount_in_cents ?? 0) / 100), 0); // a COP
-
-    const percent = Math.min(100, Math.floor((total / goal) * 100));
-    return { totalCOP: total, pct: percent };
-  }, [donations, goal]);
+      .reduce((acc, d) => acc + ((d.amount_in_cents ?? 0) / 100), 0);
+    return { totalCOP: total, pct: Math.min(100, Math.floor((total / goal) * 100)) };
+  }, [rows, goal]);
 
   return (
     <div className="w-full">
