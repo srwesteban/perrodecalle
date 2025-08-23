@@ -1,23 +1,23 @@
-export const config = { runtime: "edge" };
+// /api/wompi/integrity.ts
+export const config = { runtime: "nodejs" };
+import crypto from "node:crypto";
 
-function hex(buffer: ArrayBuffer) {
-  const view = new Uint8Array(buffer);
-  return [...view].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+  try {
+    const { reference, amountInCents, currency = "COP" } = req.body ?? {};
+    if (!reference || !amountInCents) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+    const integrityKey = process.env.WOMPI_INTEGRITY_SECRET!;
+    const integrity = crypto
+      .createHash("sha256")
+      .update(`${reference}${amountInCents}${currency}${integrityKey}`)
+      .digest("hex");
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const { reference, amountInCents, currency = "COP", expiration } = await req.json();
-
-  const secret = process.env.WOMPI_INTEGRITY_SECRET || "";
-  if (!secret) return new Response("Missing WOMPI_INTEGRITY_SECRET", { status: 500 });
-
-  const base = `${reference}${amountInCents}${currency}${expiration ?? ""}${secret}`;
-  const enc = new TextEncoder();
-  const hash = await crypto.subtle.digest("SHA-256", enc.encode(base));
-
-  return new Response(JSON.stringify({ signature: hex(hash) }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+    res.status(200).json({ integrity });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
+  }
 }
