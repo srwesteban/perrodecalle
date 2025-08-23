@@ -55,13 +55,6 @@ function App() {
                 <div className="border-2 border-red-500 p-2">
                   <WompiPayButton amountCOP={1000} />
                 </div>
-                <div>
-                  {/* 🔥 Botón ÚNICO de prueba */}
-                  <WompiTest1000 />
-
-                  {/* ⛔️ Mientras pruebas, comenta/oculta todos los otros botones de pago */}
-                  {/* <OtrosBotonesDePago /> */}
-                </div>
                 <div className="border-2 border-red-500 p-2">
                   <FeedGrid />
                 </div>
