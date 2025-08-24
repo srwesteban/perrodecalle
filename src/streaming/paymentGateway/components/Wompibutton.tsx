@@ -62,7 +62,7 @@ export default function WompiButton({
             currency,
             amountInCents,        // 👈 ya viene convertido
             reference,
-            publicKey: import.meta.env.WOMPI_PUBLIC_KEY,
+            publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
             signature: { integrity },
             ...(redirectUrl ? { redirectUrl } : {}),
             ...(expirationTimeISO ? { expirationTime: expirationTimeISO } : {}),
