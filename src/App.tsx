@@ -9,6 +9,7 @@ import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 import FeedGrid from "./components/FeedGrid";
+import Button from "./components/ui/Button";
 
 function App() {
   return (
@@ -50,6 +51,10 @@ function App() {
                 <div className="border-2 border-red-500 p-2">
                   <FeedGrid />
                 </div>
+                <div className="border-2 border-red-500 p-2">
+                  <Button/>
+                </div>
+                
               </div>
             </div>
           </section>
