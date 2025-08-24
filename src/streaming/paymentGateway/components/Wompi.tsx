@@ -3,8 +3,6 @@ import WompiButton from "./Wompibutton";
 
 export default function Wompi() {
   const reference = useMemo(() => `DON-${Date.now()}`, []);
-  const redirectUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/gracias` : undefined;
 
   // Montos en pesos
   const amounts = [1500, 2000, 5000, 10000, 20000, 65000];
@@ -18,10 +16,9 @@ export default function Wompi() {
         {amounts.map((cop) => (
           <WompiButton
             key={cop}
-            amountCOP={cop}      
+            amountCOP={cop}
             currency="COP"
             reference={reference}
-            redirectUrl={redirectUrl}
           />
         ))}
       </div>

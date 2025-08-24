@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
+import Button from "@mui/material/Button";
 
 type Props = {
-  amountCOP: number;          // 👈 en pesos
+  amountCOP: number; // en pesos
   currency?: "COP";
   reference: string;
-  redirectUrl?: string;
   expirationTimeISO?: string;
 };
 
@@ -24,12 +24,9 @@ export default function WompiButton({
   amountCOP,
   currency = "COP",
   reference,
-  redirectUrl,
   expirationTimeISO,
 }: Props) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
-
-  // 👇 conversión interna
   const amountInCents = useMemo(() => toCents(amountCOP), [amountCOP]);
 
   useEffect(() => {
@@ -47,7 +44,9 @@ export default function WompiButton({
       const { integrity } = await r.json();
 
       if (
-        !document.querySelector('script[src="https://checkout.wompi.co/widget.js"]')
+        !document.querySelector(
+          'script[src="https://checkout.wompi.co/widget.js"]'
+        )
       ) {
         const s = document.createElement("script");
         s.src = "https://checkout.wompi.co/widget.js";
@@ -60,11 +59,10 @@ export default function WompiButton({
           // @ts-ignore: expuesto por el script de Wompi
           const checkout = new WidgetCheckout({
             currency,
-            amountInCents,        // 👈 ya viene convertido
+            amountInCents,
             reference,
             publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
             signature: { integrity },
-            ...(redirectUrl ? { redirectUrl } : {}),
             ...(expirationTimeISO ? { expirationTime: expirationTimeISO } : {}),
           });
           checkout.open((result: any) => {
@@ -73,14 +71,7 @@ export default function WompiButton({
         };
       }
     })();
-  }, [amountInCents, currency, reference, redirectUrl, expirationTimeISO]);
+  }, [amountInCents, currency, reference, expirationTimeISO]);
 
-  return (
-    <button
-      ref={btnRef}
-      className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-    >
-      {formatCOP(amountCOP)} {/* 👈 muestra pesos */}
-    </button>
-  );
+  return <Button ref={btnRef}>{formatCOP(amountCOP)}</Button>;
 }
