@@ -37,14 +37,14 @@ export default function WebcamPreview({ deviceId }: Props) {
     };
   }, [deviceId]);
 
-  return (
+ return (
     <div className="relative w-full h-full">
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
-        className="w-full h-full object-cover"
+        className="block w-full h-full max-w-full object-contain md:object-cover"
       />
       {error && (
         <div className="absolute inset-0 grid place-items-center bg-black/60 text-white text-sm p-4">
