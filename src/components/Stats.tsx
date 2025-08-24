@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import VisitsCounter from "./VisitsCounter";
+import VisitsCounter from "../streaming/userViewers/components/VisitsCounter";
 
 function Stats() {
   const [visitas, setVisitas] = useState<number | null>(null);
