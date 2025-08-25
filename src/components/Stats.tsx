@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import TotalViews from "./TotalViews";
 import Visitas from "./Visitas";
+import Usuarios from "./Usuarios";
 
 function Stats() {
   const [visitas, setVisitas] = useState<number | null>(null);
@@ -32,6 +33,7 @@ function Stats() {
       <div>
       <h3><Visitas /></h3>
       </div>
+      <div><h3><Usuarios /></h3></div>
     </div>
   );
 }
