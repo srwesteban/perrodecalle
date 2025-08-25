@@ -1,7 +1,6 @@
 import "./index.css";
 import Background from "./components/Background";
 import Overlay from "./components/Overlay";
-import Stats from "./components/Stats";
 import LiveVideo from "./components/LiveVideo";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
 import MediaFeed from "./components/MediaFeed";
@@ -65,7 +64,7 @@ function App() {
             <Wompi />
           </div>
 
-          {/* 5) FeedGrid */}
+          {/* 5) FeedGrid
           <div
             className="
               order-5 bg-black/40 rounded-xl p-3
@@ -74,7 +73,7 @@ function App() {
             "
           >
             <FeedGrid />
-          </div>
+          </div> */}
 
           {/* 6) Historial */}
           <div
