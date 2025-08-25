@@ -8,7 +8,7 @@ export default function TotalViews() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/ga/total-views");
+        const r = await fetch("/api/ga/total-views", { cache: "no-store" });
         const j = await r.json();
         setN(j.totalViews ?? 0);
       } catch (e: any) {
