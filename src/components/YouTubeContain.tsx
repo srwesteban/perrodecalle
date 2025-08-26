@@ -12,7 +12,8 @@ function getYouTubeId(input?: string): string {
     if (/^[\w-]{11}$/.test(input)) return input;
     const u = new URL(input);
     if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
-    if (u.pathname.startsWith("/embed/")) return u.pathname.split("/").pop() || DEFAULT_ID;
+    if (u.pathname.startsWith("/embed/"))
+      return u.pathname.split("/").pop() || DEFAULT_ID;
     return u.searchParams.get("v") || DEFAULT_ID;
   } catch {
     return DEFAULT_ID;
@@ -36,7 +37,7 @@ export default function YouTubeContain({
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
-        className="absolute inset-0 w-full h-full rounded-lg border-0"
+        className="absolute inset-0 w-full h-full rounded-lg border-0 block"
       />
     </div>
   );

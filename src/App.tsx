@@ -60,7 +60,7 @@ function App() {
             <StatsBar />
           </div>
 
-          <div className="order-2 bg-black/40 rounded-xl p-2 aspect-video md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-2">
+          <div className="order-2 bg-black/40 rounded-xl p-2 w-full aspect-video md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-2">
             <LiveVideo />
           </div>
 
