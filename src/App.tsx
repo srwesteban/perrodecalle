@@ -20,6 +20,7 @@ import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
 import DonationSection from "./components/DonationSection";
+import Informacion from "./components/Informacion";
 
 function App() {
   const assetsReady = usePreloadImages([
@@ -56,37 +57,54 @@ function App() {
 
       <div className="relative z-10 text-white p-2 md:p-4 h-full">
         <div className="flex flex-col gap-2 md:grid md:grid-cols-3 md:grid-rows-8 md:gap-3 md:h-full">
-
           {/* Bloque del LiveVideo */}
           <div
-            className="order-1 bg-black/40 rounded-xl p-2 w-full aspect-video row-span-8
-                md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-1 max-h-[820px]"
+            className={[
+              "order-1 bg-black/40 rounded-xl p-2 w-full",
+              "md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-1",
+              "max-h-[840px] flex flex-col h-full min-h-0 overflow-hidden",
+            ].join(" ")}
           >
-            <div className=" bg-black/30 rounded-lg h-[28px] md:h-[40px] mb-2 flex items-center md:col-span-2">
+            {/* Barra superior fija */}
+            <div className="bg-black/30 rounded-lg h-[28px] md:h-[40px] mb-2 flex items-center shrink-0 overflow-hidden">
               <StatsBar />
             </div>
 
-            <div>
+            {/* Contenedor del video: crece y no recorta */}
+            <div className="flex-1 min-h-0">
               <LiveVideo />
             </div>
-
-            <div className="mt-2 bg-black/30 rounded-xl p-3 text-center">
-              Informacion...
-            </div>
           </div>
 
-          <div className="order-2 bg-black/40 rounded-xl p-3 min-h-[200px] md:col-start-3 md:row-start-1 md:row-span-5">
-            <div className="bg-black/40 rounded-xl p-3 h-[80px] mb-2 sm:mb-10">
+          <Informacion
+            className={[
+              "order-2 md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-5",
+            ].join(" ")}
+          />
+
+          <div
+            className={[
+              "order-3 bg-black/40 rounded-xl p-3 min-h-[200px]",
+              "md:col-start-3 md:row-start-1 md:row-span-5",
+              "flex flex-col h-full min-h-0 overflow-hidden",
+            ].join(" ")}
+          >
+            {/* Top fijo sin scroll */}
+            <div className="bg-black/40 rounded-xl p-3 h-[80px] mb-2 sm:mb-10 shrink-0 overflow-hidden">
               <ProgressBar goal={1000000} />
             </div>
-            <DonationSection />
+
+            {/* Scroll interno */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <DonationSection />
+            </div>
           </div>
 
-          <div className="order-3 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-3 md:row-span-3 md:col-start-2 md:row-start-6">
+          <div className="order-4 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-3 md:row-span-3 md:col-start-2 md:row-start-6">
             <Historial />
           </div>
 
-          <div className="order-4 bg-black/40 rounded-xl p-3 md:col-span-1 md:row-span-3 md:col-start-1 md:row-start-6">
+          <div className="order-5 bg-black/40 rounded-xl p-3 md:col-span-1 md:row-span-3 md:col-start-1 md:row-start-6">
             <MediaFeed />
           </div>
         </div>

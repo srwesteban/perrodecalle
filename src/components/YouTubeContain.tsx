@@ -1,10 +1,12 @@
+import React from "react";
+
 type Props = {
   src?: string;
   title?: string;
   className?: string;
 };
 
-const DEFAULT_ID = "V1SPQGiU9q4"; // RenéZZ
+const DEFAULT_ID = "V1SPQGiU9q4";
 
 function getYouTubeId(input?: string): string {
   if (!input) return DEFAULT_ID;
@@ -12,8 +14,7 @@ function getYouTubeId(input?: string): string {
     if (/^[\w-]{11}$/.test(input)) return input;
     const u = new URL(input);
     if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
-    if (u.pathname.startsWith("/embed/"))
-      return u.pathname.split("/").pop() || DEFAULT_ID;
+    if (u.pathname.startsWith("/embed/")) return u.pathname.split("/").pop() || DEFAULT_ID;
     return u.searchParams.get("v") || DEFAULT_ID;
   } catch {
     return DEFAULT_ID;
@@ -29,17 +30,14 @@ export default function YouTubeContain({
   const embed = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
 
   return (
-    <div className={`w-full aspect-video ${className}`}>
+    <div className={`relative ${className}`}>
       <iframe
         src={embed}
         title={title}
-        loading="lazy"
-        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerPolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
-        className="w-full h-full rounded-lg border-0"
+        className="absolute inset-0 w-full h-full border-0"
       />
     </div>
   );
 }
-

@@ -1,4 +1,3 @@
-// src/theme.ts
 import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
@@ -22,9 +21,33 @@ export const theme = createTheme({
       defaultProps: { variant: "contained", disableElevation: true },
       styleOverrides: {
         root: {
-          paddingInline: 20, paddingBlock: 12,
+          paddingInline: 20,
+          paddingBlock: 12,
           boxShadow: "0 6px 14px rgba(255,87,34,.18)",
           "&:hover": { boxShadow: "0 8px 18px rgba(255,87,34,.28)" },
+        },
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          // Scrollbars globales
+          "&::-webkit-scrollbar": {
+            width: "8px",
+            height: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "rgba(255,255,255,0.05)",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "linear-gradient(180deg, #4ade80, #16a34a)",
+            borderRadius: "8px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#22c55e",
+          },
+          scrollbarWidth: "thin", // Firefox
+          scrollbarColor: "#22c55e rgba(255,255,255,0.05)", // Firefox
         },
       },
     },
