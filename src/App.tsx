@@ -1,11 +1,9 @@
-// App.tsx
 import "./index.css";
 import Background from "./components/Background";
 import MobileIntro from "./components/MobileIntro";
 import SplashScreen from "./components/SplashScreen";
 
 import LiveVideo from "./components/LiveVideo";
-import Wompi from "./streaming/paymentGateway/components/Wompi";
 import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
@@ -55,28 +53,37 @@ function App() {
       <Background />
 
       <div className="relative z-10 text-white p-2 md:p-4 h-full">
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-4 md:grid-rows-8 md:gap-3 md:h-full">
-          <div className="order-1 bg-black/30 rounded-lg h-[28px] md:h-[28px] flex items-center md:col-span-2">
-            <StatsBar />
-          </div>
+        {/* GRID DE 5×5 */}
+        <div className="grid grid-cols-5 grid-rows-5 gap-3 h-full">
+          {/* 🟢 LiveVideo + Stats + Info */}
+          <div className="col-span-3 row-span-3 bg-black/40 rounded-xl p-2">
+            <div className="bg-black/30 rounded-lg h-[28px] md:h-[40px] mb-2 flex items-center">
+              <StatsBar />
+            </div>
 
-          <div className="order-2 bg-black/40 rounded-xl p-2 w-full aspect-video md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-2">
+            {/* ❌ quité el aspect-video aquí */}
             <LiveVideo />
+
+            <div className="mt-2 bg-black/30 rounded-xl p-3 text-center">
+              Información...
+            </div>
           </div>
 
-          <div className="order-3 bg-black/40 rounded-xl p-3 md:col-span-2 md:col-start-3 md:row-start-1">
-            <ProgressBar goal={1000000} />
-          </div>
-
-          <div className="order-4 bg-black/40 rounded-xl p-3 min-h-[200px] md:col-start-4 md:row-start-2 md:row-span-4">
+          {/* 🟢 Donaciones */}
+          <div className="col-span-2 row-span-3 col-start-4 bg-black/40 rounded-xl p-3">
+            <div className="bg-black/40 rounded-xl p-3 h-[80px] mb-2 sm:mb-10">
+              <ProgressBar goal={1000000} />
+            </div>
             <DonationSection />
           </div>
 
-          <div className="order-6 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-2 md:row-span-3 md:col-start-3 md:row-start-6">
+          {/* 🟢 Historial */}
+          <div className="col-span-2 row-span-2 col-start-4 row-start-4 bg-black/40 rounded-xl p-3">
             <Historial />
           </div>
 
-          <div className="order-7 bg-black/40 rounded-xl p-3 md:col-span-2 md:row-span-3 md:col-start-1 md:row-start-6">
+          {/* 🟢 Media Feed */}
+          <div className="col-span-3 row-span-2 col-start-1 row-start-4 bg-black/40 rounded-xl p-3">
             <MediaFeed />
           </div>
         </div>

@@ -5,9 +5,12 @@ function HistorialBase() {
   const rows = useDonations(50);
 
   return (
-    <div className="flex flex-col gap-2 bg-black">
-      <p className="font-bold">📜 Historial de Donaciones</p>
-      <ul className="space-y-1 text-sm text-gray-300 max-h-80 overflow-auto pr-2">
+    <div className="flex flex-col h-full bg-black/40 rounded-xl p-3">
+      {/* Título fijo arriba */}
+      <p className="font-bold mb-2">📜 Historial de Donaciones</p>
+
+      {/* Lista que se expande y hace scroll */}
+      <ul className="flex-1 overflow-auto space-y-1 text-sm text-gray-300 pr-2">
         {rows.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3">
             <span className="truncate">{r.reference}</span>
@@ -27,6 +30,7 @@ function HistorialBase() {
             <span>{r.amountFormatted}</span>
           </li>
         ))}
+
         {rows.length === 0 && (
           <li className="text-gray-400">Sin donaciones aún</li>
         )}
@@ -34,4 +38,5 @@ function HistorialBase() {
     </div>
   );
 }
+
 export default memo(HistorialBase);

@@ -1,6 +1,8 @@
 // src/components/DonationSection.tsx
 import { memo, useMemo } from "react";
-import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/WompiButton";
+import WompiButton, {
+  formatCOP,
+} from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 
@@ -17,7 +19,10 @@ const SUBS: Record<number, string> = {
 };
 
 function DonationSection() {
-  const referenceBase = useMemo(() => `DON-${Math.random().toString(36).slice(2, 8)}`, []);
+  const referenceBase = useMemo(
+    () => `DON-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  );
 
   // 🎨 estilo único para TODOS los botones (mismo peso visual)
   const buttonClass = `
@@ -32,7 +37,7 @@ function DonationSection() {
 
   return (
     <section className="space-y-3">
-      <header className="text-center">
+      <header className="text-center mb-4 sm:mb-8">
         <h3 className="text-xl font-semibold tracking-tight">Apoya hoy</h3>
         <p className="text-xs text-white/80">
           Cada aporte se convierte en alimento y cuidados. 💛
@@ -50,17 +55,22 @@ function DonationSection() {
           >
             <div className="leading-tight text-center">
               <div className="text-base font-semibold">{formatCOP(cop)}</div>
-              <div className="text-[11px] opacity-90">{SUBS[cop] ?? "¡Gracias!"}</div>
+              <div className="text-[11px] opacity-90">
+                {SUBS[cop] ?? "¡Gracias!"}
+              </div>
             </div>
           </WompiButton>
         ))}
 
         {/* Botón de “Otro monto” con popup */}
-        <CustomAmountButton referenceBase={referenceBase} className={buttonClass} />
+        <CustomAmountButton
+          referenceBase={referenceBase}
+          className={buttonClass}
+        />
       </div>
 
-      <div>
-        <SafeDonation className="mb-1"/>
+      <div className="mt-2 mb-1 xl:mt-17">
+        <SafeDonation />
       </div>
     </section>
   );

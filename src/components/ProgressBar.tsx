@@ -55,7 +55,7 @@ export default function ProgressBar({ goal }: Props) {
   }, [rows, goal]);
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: "100%", height: "10px"}}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5, gap: 1 }}>
         <Typography variant="body2" >
           Meta: ${goal.toLocaleString("es-CO")} COP

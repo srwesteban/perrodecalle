@@ -29,7 +29,7 @@ export default function YouTubeContain({
   const embed = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
 
   return (
-    <div className={`relative w-full aspect-video ${className}`}>
+    <div className={`w-full aspect-video ${className}`}>
       <iframe
         src={embed}
         title={title}
@@ -37,8 +37,9 @@ export default function YouTubeContain({
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
-        className="absolute inset-0 w-full h-full rounded-lg border-0 block"
+        className="w-full h-full rounded-lg border-0"
       />
     </div>
   );
 }
+
