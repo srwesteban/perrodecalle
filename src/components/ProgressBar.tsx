@@ -4,10 +4,9 @@ import LinearProgress, { linearProgressClasses } from "@mui/material/LinearProgr
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { useDonations } from "../hooks/useDonations";
+import { clampPercent, formatCOP } from "../utils/format";
 
-type Props = {
-  goal: number;
-};
+type Props = { goal: number };
 
 function LinearProgressWithLabel({ value }: { value: number }) {
   return (
@@ -20,21 +19,17 @@ function LinearProgressWithLabel({ value }: { value: number }) {
             height: 14,
             borderRadius: 7,
             [`&.${linearProgressClasses.colorPrimary}`]: {
-              backgroundColor: "#064e3b", // verde oscuro para el fondo vacío
+              backgroundColor: "#064e3b",
             },
             [`& .${linearProgressClasses.bar}`]: {
               borderRadius: 7,
               background: "linear-gradient(90deg, #4ade80, #22c55e, #16a34a)",
-              // verde brillante → verde intenso → verde oscuro
-              boxShadow: "0 0 10px #22c55e", // efecto glow
+              boxShadow: "0 0 10px #22c55e",
             },
           }}
         />
       </Box>
-      <Typography
-        variant="body2"
-        sx={{ color: "#4ade80", fontWeight: "bold", minWidth: 36 }}
-      >
+      <Typography variant="body2" sx={{ color: "#4ade80", fontWeight: "bold", minWidth: 36 }}>
         {`${Math.round(value)}%`}
       </Typography>
     </Box>
@@ -45,26 +40,23 @@ export default function ProgressBar({ goal }: Props) {
   const rows = useDonations();
 
   const { totalCOP, pct } = React.useMemo(() => {
-    const total =
-      (rows ?? [])
-        .filter((d) => d.status === "APPROVED")
-        .reduce((acc, d) => acc + ((d.amount_in_cents ?? 0) / 100), 0) || 0;
-
-    const percent = goal > 0 ? Math.min(100, Math.floor((total / goal) * 100)) : 0;
-    return { totalCOP: total, pct: percent };
+    const approved = (rows ?? []).filter((d) => d.status === "APPROVED");
+    const total = approved.reduce((acc, d) => acc + ((d.amount_in_cents ?? 0) / 100), 0);
+    const safeTotal = isFinite(total) ? total : 0;
+    const rawPct = goal > 0 ? (safeTotal / goal) * 100 : 0;
+    return { totalCOP: safeTotal, pct: clampPercent(rawPct) };
   }, [rows, goal]);
 
   return (
-    <Box sx={{ width: "100%", height: "10px"}}>
+    <Box sx={{ width: "100%", height: "10px" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5, gap: 1 }}>
-        <Typography variant="body2" >
-          Meta: ${goal.toLocaleString("es-CO")} COP
+        <Typography variant="body2">
+          Meta: ${formatCOP(goal)} COP
         </Typography>
-        <Typography variant="body2" sx={{  fontWeight: "bold" }}>
-          Recaudado: ${Math.floor(totalCOP).toLocaleString("es-CO")} COP
+        <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+          Recaudado: ${formatCOP(Math.floor(totalCOP))} COP
         </Typography>
       </Box>
-
       <LinearProgressWithLabel value={pct} />
     </Box>
   );

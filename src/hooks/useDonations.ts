@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { formatCOP, safeTimeMs } from "../utils/format";
 
 export type Donation = {
   id: string;
@@ -10,30 +11,35 @@ export type Donation = {
   created_at: string;
 };
 
-const NF = new Intl.NumberFormat("es-CO");
+type DonationView = Donation & { amountFormatted: string };
 
-export function useDonations(limit = 50) {
+export function useDonations(limit = 50): DonationView[] {
   const [rows, setRows] = useState<Donation[]>([]);
   const lastFetch = useRef<number>(0);
 
   async function fetchLatest() {
-    lastFetch.current = Date.now();
-    const { data } = await supabase
-      .from("donations")
-      .select("id,reference,status,amount_in_cents,updated_at,created_at")
-      .order("updated_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    setRows((data ?? []).slice(0, limit));
+    try {
+      lastFetch.current = Date.now();
+      const { data, error } = await supabase
+        .from("donations")
+        .select("id,reference,status,amount_in_cents,updated_at,created_at")
+        .order("updated_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error("supabase fetch error:", error);
+        return;
+      }
+      setRows((data ?? []).slice(0, limit));
+    } catch (e) {
+      console.error("fetchLatest error:", e);
+    }
   }
 
   useEffect(() => {
-    let alive = true;
-
-    // 1) carga inicial
     fetchLatest();
 
-    // 2) realtime
     const ch = supabase
       .channel("donations-realtime")
       .on(
@@ -43,37 +49,42 @@ export function useDonations(limit = 50) {
           const rec = (payload.new ?? payload.old) as Donation;
 
           setRows((prev) => {
+            // DELETE: sácalo y corta
             if (payload.eventType === "DELETE") {
-              return prev.filter((r) => r.id !== rec.id);
+              return prev.filter((r) => r.id !== rec.id).slice(0, limit);
             }
+
+            // UPSERT por id o reference
             const i = prev.findIndex(
               (r) => r.id === rec.id || r.reference === rec.reference
             );
             const next = i >= 0 ? [...prev] : [rec, ...prev];
             if (i >= 0) next[i] = rec;
 
+            // Orden robusto por tiempo (toma updated_at o created_at, con fallback)
             next.sort((a, b) => {
-              const ta = new Date(a.updated_at ?? a.created_at).getTime();
-              const tb = new Date(b.updated_at ?? b.created_at).getTime();
+              const ta = safeTimeMs(a.updated_at ?? a.created_at);
+              const tb = safeTimeMs(b.updated_at ?? b.created_at);
               return tb - ta;
             });
+
             return next.slice(0, limit);
           });
         }
       )
       .subscribe((status) => {
-        // si por alguna razón falla la suscripción, hacemos fetch
-        if (status === "SUBSCRIBED") return;
-        fetchLatest();
+        // Si no queda SUBSCRIBED, intentamos refrescar
+        if (status !== "SUBSCRIBED") {
+          fetchLatest();
+        }
       });
 
-    // 3) fallback de *polling* cada 3s si no hubo eventos
+    // Polling de respaldo cada 3s si no hubo eventos
     const poll = setInterval(() => {
       if (Date.now() - lastFetch.current > 3000) fetchLatest();
     }, 3000);
 
     return () => {
-      alive = false;
       clearInterval(poll);
       supabase.removeChannel(ch);
     };
@@ -83,7 +94,7 @@ export function useDonations(limit = 50) {
     () =>
       rows.map((r) => ({
         ...r,
-        amountFormatted: `$${NF.format((r.amount_in_cents ?? 0) / 100)}`,
+        amountFormatted: `$${formatCOP((r.amount_in_cents ?? 0) / 100)}`,
       })),
     [rows]
   );
