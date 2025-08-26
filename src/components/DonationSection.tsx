@@ -6,16 +6,19 @@ import WompiButton, {
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 
-const AMOUNTS = [1500, 5000, 10000, 20000, 34900, 64900, 100000, 500000];
+const AMOUNTS = [1500,2500, 5000, 10000, 20000, 34900, 64900, 100000,200000,350000, 500000];
 const SUBS: Record<number, string> = {
   1500: "Primer apoyo",
-  5000: "Snack",
+  2500: "Snack x1",
+  5000: "Snack x2",
   10000: "2 comidas",
   20000: "Día completo",
   34900: "Cuidados y vet",
   64900: "Bolsa concentrado",
   100000: "Aporte grande",
-  500000: "Aporte héroe",
+  200000: "Aporte héroe",
+  350000: "Aporte leyenda",
+  500000: "Aporte epico",
 };
 
 function DonationSection() {
