@@ -28,9 +28,7 @@ export default function YouTubeContain({
   const embed = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
 
   return (
-    <div
-      className={`relative w-full aspect-video ${className}`}
-    >
+    <div className={`relative w-full aspect-video ${className}`}>
       <iframe
         src={embed}
         title={title}
