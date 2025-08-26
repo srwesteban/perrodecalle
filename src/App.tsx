@@ -60,7 +60,7 @@ function App() {
           {/* Bloque del LiveVideo */}
           <div
             className="order-1 bg-black/40 rounded-xl p-2 w-full aspect-video row-span-8
-                md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-1"
+                md:col-span-2 md:row-span-4 md:col-start-1 md:row-start-1 max-h-[820px]"
           >
             <div className=" bg-black/30 rounded-lg h-[28px] md:h-[40px] mb-2 flex items-center md:col-span-2">
               <StatsBar />
@@ -82,11 +82,11 @@ function App() {
             <DonationSection />
           </div>
 
-          <div className="order-3 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-2 md:row-span-3 md:col-start-3 md:row-start-6">
+          <div className="order-3 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-3 md:row-span-3 md:col-start-2 md:row-start-6">
             <Historial />
           </div>
 
-          <div className="order-4 bg-black/40 rounded-xl p-3 md:col-span-2 md:row-span-3 md:col-start-1 md:row-start-6">
+          <div className="order-4 bg-black/40 rounded-xl p-3 md:col-span-1 md:row-span-3 md:col-start-1 md:row-start-6">
             <MediaFeed />
           </div>
         </div>

@@ -26,9 +26,6 @@ export default async function handler(req: Request): Promise<Response> {
     const tx = payload?.data?.transaction;
     if (!tx?.reference) return new Response("no reference", { status: 400 });
 
-    // (opcional) validar firma del webhook con WOMPI_EVENTS_SECRET aquí
-
-    // UPSERT por 'reference'
     const r = await fetch(`${supabaseUrl}/rest/v1/donations`, {
       method: "POST",
       headers: {
@@ -43,13 +40,14 @@ export default async function handler(req: Request): Promise<Response> {
         tx_id: tx.id,
         amount_in_cents: tx.amount_in_cents,
         currency: tx.currency ?? "COP",
-        provider: "wompi", // quítalo si no existe la columna
+        provider: "wompi",
+        created_at: new Date().toISOString(), // se inserta al crear
+        // ⚠️ no mandamos updated_at, Postgres lo pone solo en updates
       }),
     });
 
     if (!r.ok) {
-      const t = await r.text();
-      console.error("Supabase UPSERT error:", t);
+      console.error("Supabase UPSERT error:", await r.text());
       return new Response("db error", { status: 500 });
     }
 
