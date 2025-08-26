@@ -6,7 +6,6 @@ import Wompi from "./streaming/paymentGateway/components/Wompi";
 import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
-import FeedGrid from "./components/FeedGrid";
 import StatsBar from "./components/StatsBar";
 // ...
 function App() {
@@ -63,17 +62,6 @@ function App() {
           >
             <Wompi />
           </div>
-
-          {/* 5) FeedGrid
-          <div
-            className="
-              order-5 bg-black/40 rounded-xl p-3
-              min-h-[200px]
-              md:order-none md:p-4 md:row-span-4 md:col-start-3 md:row-start-2 md:h-full md:overflow-auto
-            "
-          >
-            <FeedGrid />
-          </div> */}
 
           {/* 6) Historial */}
           <div
