@@ -49,10 +49,11 @@ export default function StatsBar() {
         loading="lazy"
         referrerPolicy="no-referrer"
         sx={{
-          height: 20,
+          height: 30,
           width: "auto",
           flexShrink: 0,
           filter: "contrast(1.15) saturate(1.05)",
+          marginRight: "50px"
         }}
       />
 

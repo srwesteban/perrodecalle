@@ -69,7 +69,7 @@ function DonationSection() {
         />
       </div>
 
-      <div className="mt-2 mb-1 xl:mt-17">
+      <div className="mt-2 mb-1 lg:mt-12">
         <SafeDonation />
       </div>
     </section>
