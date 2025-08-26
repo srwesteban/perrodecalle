@@ -25,7 +25,6 @@ type MobileIntroProps = {
   clickSizeClass?: string;
   clickPersist?: boolean;
 
-  /** Nuevo: notifica cuando termina la animación */
   onFinish?: () => void;
 };
 
@@ -55,6 +54,33 @@ export default function MobileIntro({
 
   onFinish,
 }: MobileIntroProps) {
+  // --- Detecta mobile desde el primer render (SPA) ---
+  const getIsMobile = () =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 767.98px)").matches
+      : true; // fallback móvil si no hay window (no SSR en Vite)
+
+  const [isMobile, setIsMobile] = useState<boolean>(getIsMobile);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767.98px)");
+    const apply = () => setIsMobile(mq.matches);
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
+  // Si NO es mobile, avisa al padre y no montes nada
+  useEffect(() => {
+    if (!isMobile) {
+      // asegura que la App avance al contenido real
+      onFinish?.();
+    }
+  }, [isMobile, onFinish]);
+
+  if (!isMobile) return null;
+
+  // --- Lógica del intro (solo en mobile) ---
   const [mode, setMode] = useState<"idle" | "tap">("idle");
   const [mounted, setMounted] = useState(true);
 
@@ -68,7 +94,7 @@ export default function MobileIntro({
     return durationMs;
   }, [durationMs]);
 
-  // ✅ un solo listener para cualquier interacción
+  // Un solo listener para cualquier interacción
   useEffect(() => {
     if (!mounted) return;
     const triggerFade = () => setMode("tap");
@@ -76,7 +102,7 @@ export default function MobileIntro({
     return () => window.removeEventListener("pointerdown", triggerFade);
   }, [mounted]);
 
-  // desmontar al terminar la transición y avisar al padre
+  // Desmonta al terminar y avisa al padre
   useEffect(() => {
     if (mode === "idle") return;
     if (effectiveDuration === 0) {
@@ -104,7 +130,7 @@ export default function MobileIntro({
 
   return (
     <div
-      className={`fixed inset-0 z-[60] md:hidden pointer-events-none isolate transition-opacity will-change-[opacity,transform] ${anim}`}
+      className={`fixed inset-0 z-[60] pointer-events-none isolate transition-opacity will-change-[opacity,transform] ${anim}`}
       style={{ transitionDuration: `${effectiveDuration}ms` }}
       aria-hidden
     >
@@ -131,7 +157,7 @@ export default function MobileIntro({
             "pointer-events-none",
             "absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2",
             clickSizeClass,
-            "object-contain transition-transform transition-opacity",
+            "object-contain transition-all",
             clickPersist
               ? "opacity-100 scale-100"
               : mode === "idle"

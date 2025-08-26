@@ -19,9 +19,15 @@ import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
+import DonationSection from "./components/DonationSection";
 
 function App() {
-  const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
+  const assetsReady = usePreloadImages([
+    portada,
+    perroGif,
+    imagenEncima,
+    click,
+  ]);
   const [introDone, setIntroDone] = useState(false);
 
   // 1. Splash → hasta que carguen los assets
@@ -63,7 +69,7 @@ function App() {
           </div>
 
           <div className="order-4 bg-black/40 rounded-xl p-3 min-h-[200px] md:col-start-4 md:row-start-2 md:row-span-4">
-            <Wompi />
+            <DonationSection />
           </div>
 
           <div className="order-6 bg-black/40 rounded-xl p-3 min-h-[220px] md:col-span-2 md:row-span-3 md:col-start-3 md:row-start-6">
