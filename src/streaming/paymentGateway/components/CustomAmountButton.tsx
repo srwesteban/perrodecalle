@@ -71,7 +71,6 @@ export default function CustomAmountButton({
       >
         <div className="leading-tight text-center">
           <div className="text-base font-semibold">Otro monto</div>
-          <div className="text-[11px] opacity-90">Elige tu aporte</div>
         </div>
       </button>
 
