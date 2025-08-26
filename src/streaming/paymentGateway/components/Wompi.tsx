@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import WompiButton from "./Wompibutton";
+import WompiButton from "./WompiButton";
 
 export default function Wompi() {
   const reference = useMemo(() => `DON-${Date.now()}`, []);

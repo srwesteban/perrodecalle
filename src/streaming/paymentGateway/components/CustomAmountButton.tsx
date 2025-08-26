@@ -1,6 +1,6 @@
 // src/components/CustomAmountButton.tsx
 import { useMemo, useState } from "react";
-import { formatCOP, openWompiCheckout } from "../components/Wompibutton";
+import { formatCOP, openWompiCheckout } from "../components/WompiButton";
 
 type Props = {
   referenceBase: string;  // genera referencias únicas por transacción

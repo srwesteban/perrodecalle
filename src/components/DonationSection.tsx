@@ -1,6 +1,6 @@
 // src/components/DonationSection.tsx
 import { memo, useMemo } from "react";
-import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/Wompibutton";
+import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 
