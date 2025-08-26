@@ -1,12 +1,14 @@
+import FacebookVideos from "./FacebookVideos";
+
 function MediaFeed() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="aspect-video bg-gray-600 rounded-lg flex items-center justify-center">
-        🎬 TikTok 1
-      </div>
-      <div className="aspect-video bg-gray-600 rounded-lg flex items-center justify-center">
-        🎬 TikTok 2
-      </div>
+      <FacebookVideos
+        videos={[
+          "https://www.facebook.com/watch/?v=1098822748284759",
+          "https://www.facebook.com/watch/?v=123456789012345",
+        ]}
+      />
     </div>
   );
 }
