@@ -24,6 +24,9 @@ type MobileIntroProps = {
 
   clickSizeClass?: string;
   clickPersist?: boolean;
+
+  /** Nuevo: notifica cuando termina la animación */
+  onFinish?: () => void;
 };
 
 export default function MobileIntro({
@@ -49,6 +52,8 @@ export default function MobileIntro({
 
   clickSizeClass = "w-48 h-48 md:w-56 md:h-56",
   clickPersist = false,
+
+  onFinish,
 }: MobileIntroProps) {
   const [mode, setMode] = useState<"idle" | "tap">("idle");
   const [mounted, setMounted] = useState(true);
@@ -71,21 +76,24 @@ export default function MobileIntro({
     return () => window.removeEventListener("pointerdown", triggerFade);
   }, [mounted]);
 
-  // desmontar al terminar la transición
+  // desmontar al terminar la transición y avisar al padre
   useEffect(() => {
     if (mode === "idle") return;
     if (effectiveDuration === 0) {
       setMounted(false);
+      onFinish?.();
       return;
     }
-    const timer = setTimeout(() => setMounted(false), effectiveDuration);
+    const timer = setTimeout(() => {
+      setMounted(false);
+      onFinish?.();
+    }, effectiveDuration);
     return () => clearTimeout(timer);
-  }, [mode, effectiveDuration]);
+  }, [mode, effectiveDuration, onFinish]);
 
   if (!mounted) return null;
 
-  const anim =
-    mode === "tap" ? "opacity-0" : "opacity-100";
+  const anim = mode === "tap" ? "opacity-0" : "opacity-100";
 
   const blendClass =
     gifBlendMode === "multiply"
