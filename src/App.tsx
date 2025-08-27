@@ -171,15 +171,6 @@ function App() {
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               {/* <DonationSection /> */}
-              <WompiButton
-                amountCOP={1500}
-                reference={`DON-${Date.now()}`}
-                redirectUrl={
-                  typeof window !== "undefined"
-                    ? `${window.location.origin}/gracias`
-                    : undefined
-                }
-              />
             </div>
           </div>
 
