@@ -57,7 +57,7 @@ export default function NotaConPopup() {
           {/* Texto de advertencia abajo */}
           <div className="bg-red-800 py-3 text-center mb-10">
             <p className="text-sm text-white">
-              Por este método el pago se craga a la pagina en 24 h.
+              Por este método el pago se carga a la pagina en 24 h.
             </p>
           </div>
         </div>
