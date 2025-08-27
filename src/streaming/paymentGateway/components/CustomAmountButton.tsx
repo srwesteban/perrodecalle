@@ -1,11 +1,13 @@
+// src/components/CustomAmountButton.tsx
 import { useMemo, useState } from "react";
-import { formatCOP, openWompiCheckout } from "./WompiButton";
+import { formatCOP, openWompiCheckout } from "../components/WompiButton";
 
 type Props = {
-  referenceBase: string;  // base para generar referencias únicas
-  min?: number;           // mínimo permitido (por defecto 1.500)
-  max?: number;           // máximo permitido (por defecto 2.500.000)
-  className?: string;     // estilos del botón (mismo peso visual)
+  referenceBase: string;   // base para generar referencias únicas
+  min?: number;            // mínimo permitido (por defecto 1.500)
+  max?: number;            // opcional: máximo permitido
+  className?: string;
+  redirectUrl?: string;    // URL a la que redirige tras el pago
 };
 
 // "444444" -> "444.444" (sin $)
@@ -23,6 +25,7 @@ export default function CustomAmountButton({
   min = 1500,
   max = 2500000,
   className = "",
+  redirectUrl,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [valueStr, setValueStr] = useState(""); // siempre formateado con puntos
@@ -33,7 +36,7 @@ export default function CustomAmountButton({
     return Number.isFinite(n) ? n : NaN;
   }, [valueStr]);
 
-  // restricciones de mínimo y máximo
+  // Validaciones de monto
   const error =
     !valueStr
       ? ""
@@ -45,6 +48,7 @@ export default function CustomAmountButton({
       ? `El máximo es ${formatCOP(max)}`
       : "";
 
+  // Formatea mientras escribe (con puntos)
   function onChangeRaw(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
     const digits = raw.replace(/\D/g, "");
@@ -54,9 +58,10 @@ export default function CustomAmountButton({
   async function confirm() {
     if (error || !value) return;
     await openWompiCheckout({
-      amountInCents: Math.round(value * 100), // conversión a CENTAVOS
+      amountInCents: Math.round(value * 100),
       currency: "COP",
       referenceBase,
+      redirectUrl,
     });
     setOpen(false);
     setValueStr("");
@@ -64,26 +69,30 @@ export default function CustomAmountButton({
 
   return (
     <>
-      {/* Botón que abre el popup (MISMO estilo que pasas) */}
+      {/* Botón que abre el popup */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         className={className}
         aria-label="Donar otro monto"
       >
-        <div className="leading-tight text-center px-2 w-full">
-          <div className="text-base font-semibold truncate">Otro monto</div>
+        <div className="leading-tight text-center">
+          <div className="text-base font-semibold">Otro monto</div>
         </div>
       </button>
 
       {/* Popup */}
       {open && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setOpen(false)}
+          />
           <div className="relative w-[92vw] max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-4 text-white shadow-xl">
             <h4 className="text-sm font-semibold">Escribe tu donación</h4>
             <p className="text-xs text-white/70">
-              Entre {formatCOP(min)} y {formatCOP(max)}
+              Mín. {formatCOP(min)}
+              {max ? `  | Máx. ${formatCOP(max)}` : ""}
             </p>
 
             <div className="mt-3">
@@ -96,7 +105,10 @@ export default function CustomAmountButton({
                 onChange={onChangeRaw}
                 onPaste={(e) => {
                   e.preventDefault();
-                  const text = (e.clipboardData.getData("text") || "").replace(/\D/g, "");
+                  const text = (e.clipboardData.getData("text") || "").replace(
+                    /\D/g,
+                    ""
+                  );
                   setValueStr(formatPlainCOP(text));
                 }}
               />

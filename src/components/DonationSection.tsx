@@ -2,7 +2,6 @@ import React, { memo, useMemo } from "react";
 import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
-import { Opacity } from "@mui/icons-material";
 
 const AMOUNTS = [
   1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
@@ -23,13 +22,12 @@ const SUBS: Record<number, string> = {
 };
 
 function DonationSectionComponent() {
-  // Prefijo estable para toda la sesión de la vista
   const referenceBase = useMemo(
     () => `DON-${Math.random().toString(36).slice(2, 8)}`,
     []
   );
 
-  // Vuelve a la raíz del sitio (no a /gracias) tras el checkout
+  // ⬇️ vuelve a la RAÍZ del comercio (no /gracias)
   const redirectUrl =
     typeof window !== "undefined" ? window.location.origin : undefined;
 
@@ -41,41 +39,36 @@ function DonationSectionComponent() {
     "transition-all flex items-center justify-center overflow-hidden";
 
   return (
-    <section className="space-y-4">
-      <header className="text-center mb-2 sm:mb-4 px-2">
+    <section className="space-y-3">
+      <header className="text-center mb-4 sm:mb-8 px-2">
         <h3 className="text-xl font-semibold tracking-tight">Apoya hoy</h3>
-        <p className="text-xs text-white/80">
-          Cada aporte se convierte en alimento y cuidados. 💛
-        </p>
+        <p className="text-xs text-white/80">Cada aporte se convierte en alimento y cuidados. 💛</p>
       </header>
 
-      {/* Grilla de montos fijos */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {AMOUNTS.map((cop) => (
           <WompiButton
             key={cop}
-            amountCOP={cop}               // ✅ En PESOS; el botón convierte a centavos internamente
-            currency="COP"
-            referenceBase={referenceBase}
-            redirectUrl={redirectUrl}
+            amountCOP={cop}
+            reference={referenceBase}
+            redirectUrl={redirectUrl}   // vuelve a la raíz del dominio
             className={buttonClass}
           >
-            <div className="flex flex-col items-center leading-tight">
-              <span className="text-base sm:text-lg">{formatCOP(cop)}</span>
-              <span className="text-[10px] text-black sm:text-xs font-bold opacity-80">
-                {SUBS[cop] ?? "Aporte"}
-              </span>
+            <div className="leading-tight text-center px-2 w-full">
+              <div className="text-base font-semibold truncate">{formatCOP(cop)}</div>
+              <div className="text-[11px] opacity-90 truncate">{SUBS[cop] ?? "¡Gracias!"}</div>
             </div>
           </WompiButton>
         ))}
 
-        <CustomAmountButton referenceBase={referenceBase} className={buttonClass} />
-
-
+        <CustomAmountButton
+          referenceBase={referenceBase}
+          redirectUrl={redirectUrl}     // idem
+          className={buttonClass}
+        />
       </div>
 
-      {/* Sello de seguridad / info */}
-      <div className="mt-2 lg:mt-6">
+      <div className="mt-2 mb-1 lg:mt-12">
         <SafeDonation />
       </div>
     </section>
