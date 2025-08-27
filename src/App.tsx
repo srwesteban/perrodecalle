@@ -164,7 +164,7 @@ function App() {
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DonationSection />
-              <Wompi/>
+              {/* <Wompi/> */}
             </div>
           </div>
 
