@@ -1,34 +1,83 @@
-// App.tsx
+// src/App.tsx
 import "./index.css";
 import Background from "./components/Background";
 import MobileIntro from "./components/MobileIntro";
 import SplashScreen from "./components/SplashScreen";
-
 import LiveVideo from "./components/LiveVideo";
 import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
 import StatsBar from "./components/StatsBar";
+import DonationSection from "./components/DonationSection";
+import Informacion from "./components/Informacion";
+import ConfettiController from "./components/ConfettiController";
 
 import { usePreloadImages } from "./hooks/usePreloadImages";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "./lib/supabase";
 
 // assets
 import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
-import DonationSection from "./components/DonationSection";
-import Informacion from "./components/Informacion";
 
 function App() {
   const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
   const [introDone, setIntroDone] = useState(false);
 
-  // 1. Splash → hasta que carguen los assets
+  // ✅ Estado para encender/apagar confeti
+  const [confettiOn, setConfettiOn] = useState(false);
+
+  // Para evitar duplicados
+  const celebrated = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("donations-status")
+      // Cuando insertan una donación nueva
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "donations" },
+        (payload: any) => {
+          const row = payload.new;
+          if (!row) return;
+          if (row.status === "APPROVED" && !celebrated.current.has(row.id)) {
+            celebrated.current.add(row.id);
+            setConfettiOn(true);
+          }
+        }
+      )
+      // Cuando actualizan una donación existente
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "donations" },
+        (payload: any) => {
+          const row = payload.new;
+          const prev = payload.old;
+          if (!row) return;
+
+          const justApproved =
+            row.status === "APPROVED" &&
+            (prev ? prev.status !== "APPROVED" : !celebrated.current.has(row.id));
+
+          if (justApproved && !celebrated.current.has(row.id)) {
+            celebrated.current.add(row.id);
+            setConfettiOn(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Splash hasta que carguen assets
   if (!assetsReady) return <SplashScreen />;
 
-  // 2. MobileIntro → bloquea hasta terminar fade
+  // Intro móvil
   if (!introDone) {
     return (
       <MobileIntro
@@ -42,28 +91,31 @@ function App() {
     );
   }
 
-  // 3. App real
+  // App real
   return (
     <div
       className={[
         "relative min-h-screen",
-        // 👇 Scroll SOLO en pantallas pequeñas
         "overflow-y-auto md:overflow-y-hidden",
         "overflow-x-hidden",
-        // Altura 100dvh en desktop para grid perfecto
         "md:h-dvh",
       ].join(" ")}
     >
       <Background />
+
+      {/* 🎊 Confeti a pantalla completa */}
+      <ConfettiController
+        active={confettiOn}
+        durationMs={5000}
+        onDone={() => setConfettiOn(false)}
+      />
 
       <div className="relative z-10 text-white p-2 md:p-4 h-full">
         <div
           className={[
             "flex flex-col gap-2",
             "md:grid md:grid-cols-3 md:gap-3 md:h-full",
-            // 👇 Filas robustas sin depender de la config del amigo
             "md:[grid-template-rows:repeat(8,minmax(0,1fr))]",
-            // evita que hijos estiren el grid
             "min-h-0",
           ].join(" ")}
         >
@@ -80,18 +132,18 @@ function App() {
               <StatsBar />
             </div>
 
-            {/* Contenedor del video: crece y no recorta ni invade filas */}
+            {/* Contenedor del video */}
             <div className="flex-1 min-h-0">
               <LiveVideo />
             </div>
           </div>
 
-          {/* Fila extra de información (independiente) */}
+          {/* Fila extra de información */}
           <Informacion
             className={[
               "order-2",
               "md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-5",
-              "min-h-0", // por si el contenido crece
+              "min-h-0",
             ].join(" ")}
           />
 
@@ -103,12 +155,12 @@ function App() {
               "flex flex-col h-full min-h-0 overflow-hidden",
             ].join(" ")}
           >
-            {/* Top fijo sin scroll */}
+            {/* Barra progreso */}
             <div className="bg-black/40 rounded-xl p-3 h-[80px] mb-2 sm:mb-10 shrink-0 overflow-hidden">
               <ProgressBar goal={1000000} />
             </div>
 
-            {/* Scroll interno solo en esta columna */}
+            {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DonationSection />
             </div>
