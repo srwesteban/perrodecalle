@@ -21,9 +21,15 @@ import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
+import WompiButton from "./streaming/paymentGateway/components/WompiButton";
 
 function App() {
-  const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
+  const assetsReady = usePreloadImages([
+    portada,
+    perroGif,
+    imagenEncima,
+    click,
+  ]);
   const [introDone, setIntroDone] = useState(false);
 
   // ✅ Estado para encender/apagar confeti
@@ -59,7 +65,9 @@ function App() {
 
           const justApproved =
             row.status === "APPROVED" &&
-            (prev ? prev.status !== "APPROVED" : !celebrated.current.has(row.id));
+            (prev
+              ? prev.status !== "APPROVED"
+              : !celebrated.current.has(row.id));
 
           if (justApproved && !celebrated.current.has(row.id)) {
             celebrated.current.add(row.id);
@@ -162,7 +170,17 @@ function App() {
 
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
-              <DonationSection />
+              {/* <DonationSection /> */}
+              <WompiButton
+                amountCOP={1500}
+                reference={`DON-${Date.now()}`}
+                publicKey={import.meta.env.VITE_WOMPI_PUBLIC_KEY} // o process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY
+                redirectUrl={
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/gracias`
+                    : undefined
+                }
+              />
             </div>
           </div>
 
