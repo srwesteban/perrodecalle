@@ -10,6 +10,12 @@ export function formatCOP(n: number) {
   }).format(n);
 }
 
+/** Construye URL absoluta a /api (sirve en producción y local) */
+function apiUrl(path: string) {
+  if (typeof window !== "undefined") return `${window.location.origin}${path}`;
+  return path;
+}
+
 /** Carga el script del widget una sola vez */
 async function ensureWompiScript(): Promise<void> {
   if (typeof window === "undefined") return;
@@ -34,7 +40,7 @@ async function fetchIntegrity(params: {
   currency: string;
   expirationTimeISO?: string;
 }): Promise<string> {
-  const r = await fetch("/api/wompi/integrity", {
+  const r = await fetch(apiUrl("/api/wompi/integrity"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
