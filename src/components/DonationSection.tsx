@@ -3,7 +3,10 @@ import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/W
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 
-const AMOUNTS = [1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000] as const;
+const AMOUNTS = [
+  1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
+] as const;
+
 const SUBS: Record<number, string> = {
   1500: "Primer apoyo",
   2500: "Snack x1",
@@ -19,9 +22,14 @@ const SUBS: Record<number, string> = {
 };
 
 function DonationSectionComponent() {
-  const referenceBase = useMemo(() => `DON-${Math.random().toString(36).slice(2, 8)}`, []);
+  const referenceBase = useMemo(
+    () => `DON-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  );
 
-  // Estilo único por botón (sin redundancias)
+  const redirectUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/gracias` : undefined;
+
   const buttonClass =
     "w-full h-16 rounded-xl bg-emerald-500 text-black font-semibold " +
     "hover:bg-emerald-400 active:bg-emerald-300 " +
@@ -36,10 +44,15 @@ function DonationSectionComponent() {
         <p className="text-xs text-white/80">Cada aporte se convierte en alimento y cuidados. 💛</p>
       </header>
 
-      {/* Grid seguro: no desborda, y se trunca el contenido largo */}
       <div className="grid grid-cols-2 gap-2">
         {AMOUNTS.map((cop) => (
-          <WompiButton key={cop} amountCOP={cop} reference={referenceBase} className={buttonClass}>
+          <WompiButton
+            key={cop}
+            amountCOP={cop}
+            reference={referenceBase}
+            redirectUrl={redirectUrl}   // opcional
+            className={buttonClass}
+          >
             <div className="leading-tight text-center px-2 w-full">
               <div className="text-base font-semibold truncate">{formatCOP(cop)}</div>
               <div className="text-[11px] opacity-90 truncate">{SUBS[cop] ?? "¡Gracias!"}</div>
@@ -47,8 +60,11 @@ function DonationSectionComponent() {
           </WompiButton>
         ))}
 
-        {/* Botón “Otro monto” con popup */}
-        <CustomAmountButton referenceBase={referenceBase} className={buttonClass} />
+        <CustomAmountButton
+          referenceBase={referenceBase}
+          redirectUrl={redirectUrl}     // opcional
+          className={buttonClass}
+        />
       </div>
 
       <div className="mt-2 mb-1 lg:mt-12">

@@ -1,4 +1,3 @@
-// src/streaming/paymentGateway/components/WompiButton.tsx
 import { useCallback, useMemo, useRef } from "react";
 
 export function formatCOP(pesos: number) {
@@ -9,26 +8,57 @@ export function formatCOP(pesos: number) {
   }).format(pesos);
 }
 
-// Carga el script de Wompi una sola vez
-let wompiScriptPromise: Promise<void> | null = null;
-export function ensureWompiScript() {
+/** Espera hasta que window.WidgetCheckout exista, cargando el script si hace falta */
+let wompiReadyPromise: Promise<void> | null = null;
+
+export function ensureWompiReady(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (wompiScriptPromise) return wompiScriptPromise;
+  if (wompiReadyPromise) return wompiReadyPromise;
 
-  if (document.querySelector('script[src="https://checkout.wompi.co/widget.js"]')) {
-    wompiScriptPromise = Promise.resolve();
-    return wompiScriptPromise;
-  }
+  wompiReadyPromise = new Promise<void>((resolve, reject) => {
+    // ¿Ya está disponible?
+    // @ts-ignore
+    if (window.WidgetCheckout) {
+      resolve();
+      return;
+    }
 
-  wompiScriptPromise = new Promise<void>((resolve) => {
-    const s = document.createElement("script");
-    s.src = "https://checkout.wompi.co/widget.js";
-    s.async = true;
-    s.onload = () => resolve();
-    document.head.appendChild(s);
+    const SRC = "https://checkout.wompi.co/widget.js";
+    let script = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
+
+    // Poll liviano por si WidgetCheckout aparece antes del onload
+    let iv = window.setInterval(() => {
+      // @ts-ignore
+      if (window.WidgetCheckout) {
+        window.clearInterval(iv);
+        resolve();
+      }
+    }, 30);
+
+    const done = () => {
+      try { window.clearInterval(iv); } catch {}
+      resolve();
+    };
+
+    const fail = (err: any) => {
+      try { window.clearInterval(iv); } catch {}
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.src = SRC;
+      script.async = true;
+      script.onload = done;
+      script.onerror = () => fail(new Error("No se pudo cargar widget.js de Wompi"));
+      document.head.appendChild(script);
+    } else {
+      script.addEventListener("load", done, { once: true });
+      script.addEventListener("error", () => fail(new Error("Fallo al cargar widget.js")), { once: true });
+    }
   });
 
-  return wompiScriptPromise;
+  return wompiReadyPromise;
 }
 
 async function fetchIntegrity(params: {
@@ -48,18 +78,23 @@ async function fetchIntegrity(params: {
     }),
   });
   const json = await r.json();
-  return json?.integrity as string;
+  if (!json?.integrity) {
+    throw new Error("El backend no devolvió 'integrity'.");
+  }
+  return json.integrity as string;
 }
 
-// 👉 helper que puedes usar desde otros componentes (como el popup)
+/** Punto único para abrir el widget (reutilizable por todos los componentes) */
 export async function openWompiCheckout(opts: {
   amountInCents: number;
   currency?: "COP";
-  referenceBase: string;      // se le agrega timestamp para unicidad
+  referenceBase: string;      // base + timestamp para unicidad
+  redirectUrl?: string;
   expirationTimeISO?: string;
 }) {
   const currency = opts.currency ?? "COP";
-  const reference = `${opts.referenceBase}-${Date.now()}`; // ref única por click
+  const reference = `${opts.referenceBase}-${Date.now()}`;
+
   const integrity = await fetchIntegrity({
     reference,
     amountInCents: opts.amountInCents,
@@ -67,7 +102,8 @@ export async function openWompiCheckout(opts: {
     expirationTimeISO: opts.expirationTimeISO,
   });
 
-  await ensureWompiScript();
+  await ensureWompiReady();
+
   // @ts-ignore
   const checkout = new WidgetCheckout({
     currency,
@@ -75,8 +111,10 @@ export async function openWompiCheckout(opts: {
     reference,
     publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
     signature: { integrity },
+    ...(opts.redirectUrl ? { redirectUrl: opts.redirectUrl } : {}),
     ...(opts.expirationTimeISO ? { expirationTime: opts.expirationTimeISO } : {}),
   });
+
   checkout.open((result: any) => {
     console.log("Transaction:", result?.transaction);
   });
@@ -85,8 +123,9 @@ export async function openWompiCheckout(opts: {
 type Props = {
   amountCOP: number;
   currency?: "COP";
-  reference: string;               // base ref para este botón
+  reference: string;               // base ref (se le agrega timestamp al abrir)
   expirationTimeISO?: string;
+  redirectUrl?: string;
   className?: string;
   children?: React.ReactNode;
 };
@@ -96,6 +135,7 @@ export default function WompiButton({
   currency = "COP",
   reference,
   expirationTimeISO,
+  redirectUrl,
   className = "",
   children,
 }: Props) {
@@ -111,11 +151,12 @@ export default function WompiButton({
         currency,
         referenceBase: reference,
         expirationTimeISO,
+        redirectUrl,
       });
     } finally {
       openingRef.current = false;
     }
-  }, [amountInCents, currency, expirationTimeISO, reference]);
+  }, [amountInCents, currency, expirationTimeISO, reference, redirectUrl]);
 
   return (
     <button
