@@ -1,128 +1,150 @@
-// src/components/CustomAmountButton.tsx
-import { useMemo, useState } from "react";
-import {
-  formatCOP,
-  openWompiCheckout,
-} from "../components/WompiButton";
+// src/streaming/paymentGateway/components/CustomAmountButton.tsx
+import { useEffect, useMemo, useState } from "react";
+import { formatCOP } from "./WompiButton";
+
+declare global {
+  interface Window {
+    WidgetCheckout?: any;
+  }
+}
 
 type Props = {
-  referenceBase: string;  // genera referencias únicas por transacción
-  min?: number;           // mínimo permitido (por defecto 1.500)
-  className?: string;     // estilos del botón (mismo peso visual)
+  referenceBase: string;
+  className?: string;
+  minCOP?: number;
+  maxCOP?: number;
 };
-
-// "444444" -> "444.444" (sin $)
-function formatPlainCOP(n: number | string) {
-  const digits = String(n).replace(/\D/g, "");
-  if (!digits) return "";
-  return new Intl.NumberFormat("es-CO", {
-    maximumFractionDigits: 0,
-    useGrouping: true,
-  }).format(Number(digits));
-}
 
 export default function CustomAmountButton({
   referenceBase,
-  min = 1500,
   className = "",
+  minCOP = 1000,
+  maxCOP = 10_000_000,
 }: Props) {
+  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
-  const [valueStr, setValueStr] = useState(""); // siempre formateado con puntos
+  const [value, setValue] = useState<number | "">("");
 
-  // valor numérico a partir del string formateado
-  const value = useMemo(() => {
-    const n = Number(valueStr.replace(/\D/g, ""));
-    return Number.isFinite(n) ? n : NaN;
-  }, [valueStr]);
+  const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY || "";
 
-  // ✅ solo restricciones de mínimo (no hay máximo)
-  const error =
-    !valueStr
-      ? ""
-      : Number.isNaN(value)
-      ? "Valor inválido"
-      : value < min
-      ? `El mínimo es ${formatCOP(min)}`
-      : "";
+  useEffect(() => {
+    let t = 0;
+    const tick = () => {
+      if (window.WidgetCheckout) setReady(true);
+      else t = window.setTimeout(tick, 80);
+    };
+    tick();
+    return () => window.clearTimeout(t);
+  }, []);
 
-  // Formatea mientras escribe (con puntos), sin límite superior
-  function onChangeRaw(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value;
-    const digits = raw.replace(/\D/g, "");
-    setValueStr(formatPlainCOP(digits));
-  }
+  const valid = useMemo(() => {
+    if (typeof value !== "number") return false;
+    return value >= minCOP && value <= maxCOP;
+  }, [value, minCOP, maxCOP]);
 
-  async function confirm() {
-    if (error || !value) return;
-    await openWompiCheckout({
-      amountInCents: Math.round(value * 100),
-      currency: "COP",
-      referenceBase,
-    });
+  const openModal = () => setOpen(true);
+  const closeModal = () => {
     setOpen(false);
-    setValueStr("");
-  }
+    setValue("");
+  };
+
+  const pay = () => {
+    if (!ready || !publicKey || !valid || typeof value !== "number") return;
+
+    const amountInCents = Math.round(value * 100);
+    const reference = `${referenceBase}-${amountInCents}-${Date.now()}`;
+    const redirectUrl =
+      typeof window !== "undefined" ? `${window.location.origin}/gracias` : "";
+
+    const checkout = new window.WidgetCheckout({
+      currency: "COP",
+      amountInCents,
+      reference,
+      publicKey,
+      redirectUrl,
+    });
+
+    checkout.open(() => {});
+    closeModal();
+  };
 
   return (
     <>
-      {/* Botón que abre el popup */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className={className}
-        aria-label="Donar otro monto"
+        onClick={openModal}
+        disabled={!ready || !publicKey}
+        className={[
+          "inline-flex items-center justify-center select-none transition-all",
+          !ready || !publicKey ? "opacity-50 cursor-not-allowed" : "",
+          className,
+        ]
+          .join(" ")
+          .trim()}
+        title={!ready ? "Cargando…" : "Otro monto"}
       >
-        <div className="leading-tight text-center">
-          <div className="text-base font-semibold">Otro monto</div>
+        <div className="leading-tight text-center px-2 w-full">
+          <div className="text-base font-semibold truncate">Otro monto</div>
+          <div className="text-[11px] opacity-90 truncate">Personaliza tu apoyo</div>
         </div>
       </button>
 
-      {/* Popup */}
+      {/* Modal minimalista (sin librerías) */}
       {open && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="relative w-[92vw] max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-4 text-white shadow-xl">
-            <h4 className="text-sm font-semibold">Escribe tu donación</h4>
-            <p className="text-xs text-white/70">Mín. {formatCOP(min)}</p>
+        <div
+          className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white text-gray-900 shadow-xl p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-lg font-semibold mb-3">Ingresa tu monto</h4>
 
-            <div className="mt-3">
-              <input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Ej: 15.000"
-                className="w-full rounded-lg bg-zinc-800 px-3 py-2 outline-none ring-1 ring-white/10 focus:ring-emerald-400"
-                value={valueStr}
-                onChange={onChangeRaw}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const text = (e.clipboardData.getData("text") || "").replace(/\D/g, "");
-                  setValueStr(formatPlainCOP(text));
-                }}
-              />
-              {error ? (
-                <p className="mt-1 text-[11px] text-red-300">{error}</p>
-              ) : valueStr ? (
-                <p className="mt-1 text-[11px] text-white/80">
-                  Vas a donar <b>{formatCOP(value || 0)}</b>
-                </p>
-              ) : null}
+            <label className="block text-sm mb-2">Monto en pesos (COP)</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={minCOP}
+              max={maxCOP}
+              step={100}
+              value={value === "" ? "" : value}
+              onChange={(e) => {
+                const v = e.target.valueAsNumber;
+                setValue(Number.isFinite(v) ? v : "");
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-400"
+              placeholder={`${minCOP}`}
+            />
+
+            <div className="mt-2 text-xs text-gray-600">
+              {typeof value === "number" && value > 0
+                ? `Total: ${formatCOP(value)}`
+                : " "}
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="flex-1 h-10 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 transition-colors"
+                onClick={closeModal}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                disabled={!!error || !value}
-                onClick={confirm}
-                className="flex-1 h-10 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={pay}
+                disabled={!valid}
+                className={[
+                  "px-4 py-2 rounded-lg text-white",
+                  valid
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-emerald-600/60 cursor-not-allowed",
+                ]
+                  .join(" ")
+                  .trim()}
               >
-                Donar
+                Pagar
               </button>
             </div>
           </div>

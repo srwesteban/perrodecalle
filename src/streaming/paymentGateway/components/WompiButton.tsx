@@ -1,159 +1,104 @@
-// src/streaming/paymentGateway/components/WompiButton.tsx
-import { useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-/** Utils exportables */
-export function formatCOP(n: number) {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-/** Construye URL absoluta a /api (sirve en producción y local) */
-function apiUrl(path: string) {
-  if (typeof window !== "undefined") return `${window.location.origin}${path}`;
-  return path;
-}
-
-/** Carga el script del widget una sola vez */
-async function ensureWompiScript(): Promise<void> {
-  if (typeof window === "undefined") return;
-  const id = "wompi-widget-js";
-  if (document.getElementById(id)) return;
-
-  await new Promise<void>((resolve, reject) => {
-    const s = document.createElement("script");
-    s.id = id;
-    s.src = "https://checkout.wompi.co/widget.js";
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("No se pudo cargar widget.js de Wompi"));
-    document.head.appendChild(s);
-  });
-}
-
-/** Llama a tu endpoint para obtener la firma */
-async function fetchIntegrity(params: {
-  reference: string;
-  amountInCents: number;
-  currency: string;
-  expirationTimeISO?: string;
-}): Promise<string> {
-  const r = await fetch(apiUrl("/api/wompi/integrity"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      reference: params.reference,
-      amountInCents: params.amountInCents,
-      currency: params.currency,
-      expirationTime: params.expirationTimeISO,
-    }),
-  });
-
-  if (!r.ok) {
-    console.error("Wompi integrity endpoint falló:", r.status, await r.text());
-    throw new Error("No se pudo generar la firma de integridad");
+declare global {
+  interface Window {
+    WidgetCheckout?: any;
   }
-
-  const j = (await r.json()) as { integrity?: string };
-  if (!j?.integrity) throw new Error("Firma de integridad vacía");
-  return j.integrity;
 }
 
-/** API exportable que usa referenceBase (tal como la llamas en CustomAmountButton) */
-export async function openWompiCheckout(opts: {
-  amountInCents: number;
-  currency?: "COP";
-  referenceBase: string;
-  redirectUrl?: string;
-  expirationTimeISO?: string;
-}) {
-  const currency = opts.currency ?? "COP";
-  const uniqueReference = `${opts.referenceBase}-${Date.now()}`;
-
-  const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY as string;
-  if (!publicKey) throw new Error("VITE_WOMPI_PUBLIC_KEY no está definida");
-
-  await ensureWompiScript();
-
-  // @ts-ignore
-  const WidgetCheckout = (window as any).WidgetCheckout;
-  if (!WidgetCheckout) throw new Error("WidgetCheckout no disponible");
-
-  const signature = await fetchIntegrity({
-    reference: uniqueReference,
-    amountInCents: opts.amountInCents,
-    currency,
-    expirationTimeISO: opts.expirationTimeISO,
-  });
-
-  // @ts-ignore
-  const checkout = new WidgetCheckout({
-    currency,
-    amountInCents: opts.amountInCents,
-    reference: uniqueReference,
-    publicKey,
-    signature: { integrity: signature },
-    ...(opts.redirectUrl ? { redirectUrl: opts.redirectUrl } : {}),
-    ...(opts.expirationTimeISO ? { expirationTime: opts.expirationTimeISO } : {}),
-  });
-
-  checkout.open((result: any) => {
-    console.log("Wompi transaction:", result?.transaction);
-  });
+/** Formatea COP de forma compacta y bonita */
+export function formatCOP(value: number) {
+  try {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `${value.toLocaleString("es-CO")} COP`;
+  }
 }
 
-/** ====== Componente de botón por defecto (tu API original) ====== */
-type ButtonProps = {
-  amountCOP: number;              // monto en pesos
+type Props = {
+  amountCOP: number;                 // monto en pesos
+  reference: string;                 // referencia base (yo la haré única en el click)
+  redirectUrl?: string;              // opcional
   currency?: "COP";
-  reference: string;              // base de referencia
-  redirectUrl?: string;
   className?: string;
-  children?: React.ReactNode;
+  children?: React.ReactNode;        // tu contenido (el div con títulos)
 };
 
 export default function WompiButton({
   amountCOP,
-  currency = "COP",
   reference,
-  redirectUrl,
+  redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/gracias` : "",
+  currency = "COP",
   className = "",
   children,
-}: ButtonProps) {
-  const onClick = useCallback(async () => {
-    try {
-      const amountInCents = Math.round(amountCOP * 100);
-      console.log(
-        "Wompi env:",
-        (import.meta as any).env.VITE_WOMPI_PUBLIC_KEY?.startsWith("pub_test_")
-          ? "SANDBOX"
-          : "PRODUCCIÓN"
-      );
+}: Props) {
+  const [ready, setReady] = useState(false);
 
-      await openWompiCheckout({
-        amountInCents,
-        currency,
-        referenceBase: reference,
-        redirectUrl,
-      });
-    } catch (e) {
-      console.error(e);
-      alert("No se pudo iniciar el pago. Intenta de nuevo.");
+  const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY || ""; // ⚠️ DEBE existir en Vercel
+
+  // Convierto a centavos internamente (evita errores en props)
+  const amountInCents = useMemo(() => Math.max(0, Math.round(amountCOP * 100)), [amountCOP]);
+
+  // Espero el script del widget
+  useEffect(() => {
+    let t = 0;
+    const tick = () => {
+      if (window.WidgetCheckout) setReady(true);
+      else t = window.setTimeout(tick, 80);
+    };
+    tick();
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const onPay = () => {
+    if (!window.WidgetCheckout) return;
+    if (!publicKey) {
+      console.error("Falta VITE_WOMPI_PUBLIC_KEY");
+      alert("No se pudo iniciar el pago (clave pública ausente).");
+      return;
     }
-  }, [amountCOP, currency, reference, redirectUrl]);
+    if (!amountInCents) return;
+
+    // Genero referencia ÚNICA en el click, tomando tu base
+    const finalReference = `${reference}-${amountInCents}-${Date.now()}`;
+
+    const checkout = new window.WidgetCheckout({
+      currency,
+      amountInCents,
+      reference: finalReference,
+      publicKey,
+      redirectUrl,
+    });
+
+    checkout.open((result: any) => {
+      // Puedes leer result si quieres (success/cancel)
+      // console.log(result);
+    });
+  };
+
+  const disabled = !ready || !publicKey || !amountInCents;
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={onPay}
+      disabled={disabled}
       className={
-        className ||
-        "px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
+        [
+          "inline-flex items-center justify-center select-none transition-all",
+          disabled ? "opacity-50 cursor-not-allowed" : "",
+          className || "",
+        ].join(" ").trim()
       }
+      // title para accesibilidad; no cambia cursor a pointer a menos que tu clase lo haga
+      title={disabled ? "Cargando…" : "Pagar con Wompi"}
     >
-      {children ?? `Pagar ${formatCOP(amountCOP)}`}
+      {/* Si quieres mostrar estado, podrías condicionar aquí; por ahora renderizo tus children fijo */}
+      {children ?? <span className="text-sm font-semibold">{formatCOP(amountCOP)}</span>}
     </button>
   );
 }

@@ -4,6 +4,7 @@ import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmo
 import SafeDonation from "./SafeDonation";
 
 const AMOUNTS = [1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000] as const;
+
 const SUBS: Record<number, string> = {
   1500: "Primer apoyo",
   2500: "Snack x1",
@@ -19,9 +20,10 @@ const SUBS: Record<number, string> = {
 };
 
 function DonationSectionComponent() {
+  // base corta; yo la vuelvo única en el click
   const referenceBase = useMemo(() => `DON-${Math.random().toString(36).slice(2, 8)}`, []);
 
-  // Estilo único por botón (sin redundancias)
+  // Clase común de los botones (tu estilo)
   const buttonClass =
     "w-full h-16 rounded-xl bg-emerald-500 text-black font-semibold " +
     "hover:bg-emerald-400 active:bg-emerald-300 " +
@@ -36,7 +38,7 @@ function DonationSectionComponent() {
         <p className="text-xs text-white/80">Cada aporte se convierte en alimento y cuidados. 💛</p>
       </header>
 
-      {/* Grid seguro: no desborda, y se trunca el contenido largo */}
+      {/* Grid 2 columnas en todos los tamaños; ajusta si quieres md:grid-cols-3 */}
       <div className="grid grid-cols-2 gap-2">
         {AMOUNTS.map((cop) => (
           <WompiButton key={cop} amountCOP={cop} reference={referenceBase} className={buttonClass}>
@@ -47,7 +49,7 @@ function DonationSectionComponent() {
           </WompiButton>
         ))}
 
-        {/* Botón “Otro monto” con popup */}
+        {/* Botón “Otro monto” con modal */}
         <CustomAmountButton referenceBase={referenceBase} className={buttonClass} />
       </div>
 
