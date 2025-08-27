@@ -1,7 +1,14 @@
-// src/streaming/paymentGateway/components/WompiButton.tsx
 import React, { useCallback } from "react";
 
-/** Utils exportables */
+/* ========= Utils exportables ========= */
+export function formatCOP(pesos: number) {
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(pesos);
+}
+
 export function formatCOPFromCents(amountInCents: number) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -10,7 +17,7 @@ export function formatCOPFromCents(amountInCents: number) {
   }).format(amountInCents / 100);
 }
 
-/** Carga el script del widget una sola vez */
+/* ========= Carga del script ========= */
 async function ensureWompiScript(): Promise<void> {
   if (typeof window === "undefined") return;
 
@@ -48,7 +55,7 @@ async function ensureWompiScript(): Promise<void> {
   });
 }
 
-/** Llama a tu endpoint para obtener la firma (integrity) */
+/* ========= Firma de integridad ========= */
 async function fetchIntegrity(params: {
   reference: string;
   amount_in_cents: number;
@@ -67,22 +74,20 @@ async function fetchIntegrity(params: {
   return r.json();
 }
 
-/** Abre el Widget de Wompi (y registra PENDING antes) */
+/* ========= Abrir checkout ========= */
 export async function openWompiCheckout(opts: {
-  amountInCents: number;           // centavos
+  amountInCents: number;           // CENTAVOS
   currency?: "COP" | "USD";
-  referenceBase: string;           // prefijo libre (p.ej. "DON")
+  referenceBase: string;           // base para generar referencia única
   redirectUrl?: string;
   expirationTimeISO?: string;
 }) {
   const currency = (opts.currency ?? "COP").toUpperCase();
-
   const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY as string | undefined;
   if (!publicKey) throw new Error("Falta VITE_WOMPI_PUBLIC_KEY");
 
   await ensureWompiScript();
 
-  // Genera referencia única
   const reference = `${opts.referenceBase}-${Date.now()}`;
 
   // 1) Registrar PENDING (no bloquea si falla)
@@ -101,7 +106,7 @@ export async function openWompiCheckout(opts: {
     console.warn("[donations] no se pudo guardar PENDING:", e);
   }
 
-  // 2) Obtener integrity
+  // 2) Firma
   const { integrity } = await fetchIntegrity({
     reference,
     amount_in_cents: opts.amountInCents,
@@ -120,38 +125,65 @@ export async function openWompiCheckout(opts: {
     signature: { integrity },
   });
 
-  checkout.open(function (result: any) {
+  checkout.open((result: any) => {
     console.log("[wompi:widget] result:", result);
-    // El estado final siempre lo dará el webhook
   });
 }
 
-/** Botón genérico */
+/* ========= Props =========
+   Mantengo tus estilos por className.
+   Alias aceptados:
+   - amountCOP (pesos)  ó  amountInCents (centavos)
+   - reference (alias de referenceBase)
+*/
 type ButtonProps = {
-  amountInCents: number;  // en centavos (150000 = $1.500)
+  amountCOP?: number;
+  amountInCents?: number;
   currency?: "COP" | "USD";
-  referenceBase: string;
+  reference?: string;          // alias: lo usas como "base"
+  referenceBase?: string;      // nombre canónico
   redirectUrl?: string;
   className?: string;
   children?: React.ReactNode;
   expirationTimeISO?: string;
 };
 
+/* ========= Componente ========= */
 export default function WompiButton({
+  amountCOP,
   amountInCents,
   currency = "COP",
+  reference,
   referenceBase,
   redirectUrl,
   expirationTimeISO,
   className = "",
   children,
 }: ButtonProps) {
+  // Normalización de montos
+  const hasPesos = typeof amountCOP === "number";
+  const hasCents = typeof amountInCents === "number";
+  if (!hasPesos && !hasCents) {
+    throw new Error("WompiButton: pasa amountCOP (pesos) o amountInCents (centavos).");
+  }
+  const normalizedInCents = hasCents
+    ? Math.round(amountInCents as number)
+    : Math.round((amountCOP as number) * 100);
+
+  // Texto del botón en pesos
+  const labelPesos = hasPesos
+    ? (amountCOP as number)
+    : Math.round(normalizedInCents / 100);
+
+  // La base de la referencia (acepta alias "reference")
+  const base = (reference ?? referenceBase) || "DON";
+
   const onClick = useCallback(async () => {
     try {
       await openWompiCheckout({
-        amountInCents,
+        amountInCents: normalizedInCents,
         currency,
-        referenceBase,
+        referenceBase: base,
         redirectUrl,
         expirationTimeISO,
       });
@@ -159,15 +191,16 @@ export default function WompiButton({
       alert((e as Error).message);
       console.error(e);
     }
-  }, [amountInCents, currency, referenceBase, redirectUrl, expirationTimeISO]);
+  }, [normalizedInCents, currency, base, redirectUrl, expirationTimeISO]);
 
+  // ✅ Estilos los controlas tú con className (no los toco)
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold ${className}`}
-    >
-      {children ?? `Donar ${formatCOPFromCents(amountInCents)}`}
+    <button type="button" onClick={onClick} className={className}>
+      {children ?? (
+        <div className="leading-tight text-center px-2 w-full">
+          <div className="text-base font-semibold truncate">{formatCOP(labelPesos)}</div>
+        </div>
+      )}
     </button>
   );
 }
