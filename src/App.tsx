@@ -8,7 +8,7 @@ import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
 import Historial from "./components/Historial";
 import StatsBar from "./components/StatsBar";
-import DonationSection from "./components/DonationSection";
+// import DonationSection from "./components/DonationSection";
 import Informacion from "./components/Informacion";
 import ConfettiController from "./components/ConfettiController";
 
