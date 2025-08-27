@@ -1,41 +1,66 @@
 // /api/wompi/integrity.ts
-export const config = { runtime: "nodejs" };
-import crypto from "node:crypto";
+// Vercel Edge Function (compatible con Vite + Vercel)
+// Calcula la firma de integridad para Wompi.
+// IMPORTANTE: Define WOMPI_INTEGRITY (o WOMPI_INTEGRITY_SECRET) en variables de entorno (SIN prefijo VITE_).
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+export const config = { runtime: "edge" };
+
+function toHex(buf: ArrayBuffer) {
+  return [...new Uint8Array(buf)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
   try {
-    const {
-      reference,
-      amountInCents,
-      currency = "COP",
-      expirationTime, // ISO8601 opcional
-    } = req.body ?? {};
+    const { reference, amountInCents, currency, expirationTime } =
+      (await req.json()) as {
+        reference?: string;
+        amountInCents?: number;
+        currency?: string;
+        expirationTime?: string; // ISO8601 opcional
+      };
 
-    if (!reference || !amountInCents) {
-      return res.status(400).json({ error: "Missing fields" });
+    if (!reference || !amountInCents || !currency) {
+      return new Response(JSON.stringify({ error: "missing params" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Soporta ambos nombres por si tu .env usa el viejo
-    const integrityKey =
-      process.env.WOMPI_INTEGRITY_SECRET ?? process.env.WOMPI_INTEGRITY;
+    const secret =
+      process.env.WOMPI_INTEGRITY || process.env.WOMPI_INTEGRITY_SECRET;
 
-    if (!integrityKey) {
-      return res.status(500).json({ error: "Missing WOMPI_INTEGRITY_SECRET env" });
+    if (!secret) {
+      return new Response(
+        JSON.stringify({ error: "Integrity secret misconfigured" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    const ref = String(reference);
-    const amt = String(amountInCents); // en centavos
-    const cur = String(currency).toUpperCase();
+    // Cadena EXACTA según doc:
+    // "<reference><amountInCents><currency>[<expirationTime>]<secret>"
+    const chain = expirationTime
+      ? `${reference}${amountInCents}${currency}${expirationTime}${secret}`
+      : `${reference}${amountInCents}${currency}${secret}`;
 
-    const base = expirationTime
-      ? `${ref}${amt}${cur}${expirationTime}${integrityKey}`
-      : `${ref}${amt}${cur}${integrityKey}`;
+    const enc = new TextEncoder().encode(chain);
+    const hashBuf = await crypto.subtle.digest("SHA-256", enc);
+    const integrity = toHex(hashBuf);
 
-    const integrity = crypto.createHash("sha256").update(base).digest("hex");
-    res.status(200).json({ integrity });
+    return new Response(JSON.stringify({ integrity }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Server error" });
+    console.error("integrity error", e);
+    return new Response(JSON.stringify({ error: "internal" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

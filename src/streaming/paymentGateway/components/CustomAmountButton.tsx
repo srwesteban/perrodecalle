@@ -1,6 +1,9 @@
 // src/components/CustomAmountButton.tsx
 import { useMemo, useState } from "react";
-import { formatCOP, openWompiCheckout } from "../components/WompiButton";
+import {
+  formatCOP,
+  openWompiCheckout,
+} from "../components/WompiButton";
 
 type Props = {
   referenceBase: string;  // genera referencias únicas por transacción
@@ -80,9 +83,7 @@ export default function CustomAmountButton({
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div className="relative w-[92vw] max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-4 text-white shadow-xl">
             <h4 className="text-sm font-semibold">Escribe tu donación</h4>
-            <p className="text-xs text-white/70">
-              Mín. {formatCOP(min)}
-            </p>
+            <p className="text-xs text-white/70">Mín. {formatCOP(min)}</p>
 
             <div className="mt-3">
               <input
