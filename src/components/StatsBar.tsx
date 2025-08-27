@@ -1,5 +1,6 @@
+// src/components/StatsBar.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Tooltip } from "@mui/material";
 
 type Totals = { views: number; users: number };
 
@@ -28,62 +29,62 @@ export default function StatsBar() {
 
   return (
     <Box
-      // IMPORTANTÍSIMO: no sumar altura; la toma del contenedor (28px)
       sx={{
+        position: "relative",
+        width: "100%",
         height: "100%",
-        minHeight: "100%",
         display: "flex",
         alignItems: "center",
-        gap: 1,              // 8px entre logo y texto
-        px: 1,               // algo de aire lateral; el ancho no importa
-        whiteSpace: "nowrap",
+        px: 1,
         overflow: "hidden",
-        lineHeight: 1,
       }}
     >
-      {/* LOGO: protagonista sin romper altura (20px en una barra de 28px) */}
+      {/* Logo izquierda (opcional) */}
       <Box
         component="img"
         src="https://css.mintic.gov.co/mt/mintic/new/img/logo_mintic_24_dark.svg"
         alt="MinTIC"
         loading="lazy"
         referrerPolicy="no-referrer"
-        sx={{
-          height: 30,
-          width: "auto",
-          flexShrink: 0,
-          filter: "contrast(1.15) saturate(1.05)",
-          marginRight: "50px"
-        }}
+        sx={{ height: 22, width: "auto", flexShrink: 0, filter: "contrast(1.15) saturate(1.05)" }}
       />
 
-      {/* Texto ultra compacto y de alto contraste */}
-      <Typography
-        component="span"
+      {/* Texto centrado absoluto */}
+      <Box
         sx={{
-          fontSize: 13,             // pequeño pero claro
-          lineHeight: 1,            // CERO pérdida vertical
-          fontWeight: 700,          // sólido
-          color: "common.white",    // máximo contraste sobre tu bg oscuro
-          letterSpacing: 0.1,
-          fontVariantNumeric: "tabular-nums lining-nums",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 1,                   // separaciones eficientes
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          cursor: "default", // sin manito
         }}
       >
-        <Box component="span" sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-          Visitas:
-        </Box>
-        <Box component="span">{err ? "ERR" : viewsTxt}</Box>
-
-        <Box component="span" sx={{ mx: 0.75, opacity: 0.5 }}>•</Box>
-
-        <Box component="span" sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-          Usuarios:
-        </Box>
-        <Box component="span">{err ? "ERR" : usersTxt}</Box>
-      </Typography>
+        <Tooltip
+          title={err ? "ERR" : usersTxt}
+          placement="bottom"
+          arrow
+          enterDelay={5000}        // 5s la primera vez…
+          enterNextDelay={5000}    // …y también en las siguientes
+          leaveDelay={0}
+          disableFocusListener
+          disableTouchListener
+          componentsProps={{ tooltip: { sx: { fontSize: 12, px: 1, py: 0.5 } } }}
+        >
+          <Typography
+            sx={{
+              fontSize: 13,
+              lineHeight: 1,
+              fontWeight: 700,
+              color: "common.white",
+              fontVariantNumeric: "tabular-nums lining-nums",
+              cursor: "inherit",
+            }}
+            aria-label="Visitas. Usuarios ocultos tras 5 segundos de hover."
+          >
+            Visitas: {err ? "ERR" : viewsTxt}
+          </Typography>
+        </Tooltip>
+      </Box>
     </Box>
   );
 }
