@@ -4,59 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PerroDeCalle</title>
-    <script>
-      // Mata v1.js si GTM lo inyecta y evita que $wompi exista.
-      (function killWompiV1() {
-        const nuke = () => {
-          try {
-            delete window.$wompi;
-          } catch (e) {
-            window.$wompi = undefined;
-          }
-          // remueve scripts de cdn.wompi.co si los inyectan
-          document
-            .querySelectorAll('script[src*="cdn.wompi.co"]')
-            .forEach((s) => s.remove());
-        };
-        nuke();
-        // Reintenta por si GTM lo mete asíncrono
-        let i = 0,
-          id = setInterval(() => {
-            nuke();
-            if (++i > 50) clearInterval(id);
-          }, 200);
-        // Además bloquea futuras asignaciones a $wompi
-        try {
-          Object.defineProperty(window, "$wompi", {
-            get() {
-              return undefined;
-            },
-            set() {},
-            configurable: true,
-          });
-        } catch {}
-        // Evita que añadan más scripts de wompi v1
-        new MutationObserver(() => {
-          document
-            .querySelectorAll('script[src*="cdn.wompi.co"]')
-            .forEach((s) => s.remove());
-        }).observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-        });
-      })();
-    </script>
 
     <!-- GTM/Analytics los puedes dejar; no afectan el widget -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-TBBVR3J3M9"
-    ></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TBBVR3J3M9"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
+      function gtag(){dataLayer.push(arguments);}
       gtag("js", new Date());
       gtag("config", "G-TBBVR3J3M9");
     </script>
