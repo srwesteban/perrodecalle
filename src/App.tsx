@@ -174,7 +174,6 @@ function App() {
               <WompiButton
                 amountCOP={1500}
                 reference={`DON-${Date.now()}`}
-                publicKey={import.meta.env.VITE_WOMPI_PUBLIC_KEY} // o process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY
                 redirectUrl={
                   typeof window !== "undefined"
                     ? `${window.location.origin}/gracias`

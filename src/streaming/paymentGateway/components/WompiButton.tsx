@@ -1,10 +1,11 @@
+// src/streaming/paymentGateway/components/WompiButton.tsx
 import { useCallback, useState } from "react";
 
-// Carga el widget una sola vez
-async function ensureWompiScript() {
+const PUBLIC_KEY = import.meta.env.VITE_WOMPI_PUBLIC_KEY as string;
+
+async function ensureWompiScript(): Promise<void> {
   if (typeof window === "undefined") return;
   if (document.getElementById("wompi-widget-js")) return;
-
   await new Promise<void>((resolve, reject) => {
     const s = document.createElement("script");
     s.id = "wompi-widget-js";
@@ -16,41 +17,42 @@ async function ensureWompiScript() {
   });
 }
 
-// Pide la firma a tu backend
-async function getSignature(body: {
+async function getIntegrity(body: {
   reference: string;
   amountInCents: number;
   currency: "COP";
+  expirationTime?: string;
 }): Promise<string> {
   const r = await fetch("/api/wompi/integrity", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err.error || `Error ${r.status}`);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data?.integrity) {
+    throw new Error(data?.error || `Error firmando (${r.status})`);
   }
-  const data = await r.json();
-  return data.signature as string;
+  return data.integrity as string;
 }
 
 type Props = {
-  amountCOP: number;       // en pesos
-  reference: string;       // DON-<algo único>
-  publicKey: string;       // pub_test_xxx o pub_prod_xxx
+  amountCOP: number;              // monto en pesos
+  reference: string;              // referencia única
+  redirectUrl?: string;           // opcional
+  expirationTime?: string;        // ISO8601 opcional
   currency?: "COP";
-  redirectUrl?: string;
   className?: string;
+  label?: string;
 };
 
 export default function WompiButton({
   amountCOP,
   reference,
-  publicKey,
-  currency = "COP",
   redirectUrl,
+  expirationTime,
+  currency = "COP",
   className = "",
+  label = "Pagar con Wompi",
 }: Props) {
   const [loading, setLoading] = useState(false);
 
@@ -59,19 +61,37 @@ export default function WompiButton({
       setLoading(true);
       await ensureWompiScript();
 
-      const amountInCents = Math.round(amountCOP * 100);
-      const signature = await getSignature({ reference, amountInCents, currency });
+      const amountInCents = Math.round(Number(amountCOP) * 100);
+      const freeze = {
+        reference: String(reference).trim(),
+        amountInCents,
+        currency: "COP" as const,
+        ...(expirationTime ? { expirationTime } : {}),
+      };
+
+      const integrity = await getIntegrity(freeze);
 
       const WidgetCheckout = (window as any).WidgetCheckout;
       if (!WidgetCheckout) throw new Error("WidgetCheckout no está disponible");
 
       const checkout = new WidgetCheckout({
-        currency,
-        amountInCents,
-        reference,
-        publicKey,
-        redirectUrl,
-        signature, // 👈 clave para evitar el error
+        currency: freeze.currency,
+        amountInCents: freeze.amountInCents,
+        reference: freeze.reference,
+        publicKey: PUBLIC_KEY,
+        signature: { integrity },          // ★ según tu documentación
+        ...(redirectUrl ? { redirectUrl } : {}),
+        ...(expirationTime ? { expirationTime } : {}),
+        // Opcionales de ejemplo:
+        // customerData: { email: "...", fullName: "..." },
+        // taxInCents: { vat: 1900, consumption: 800 },
+        // shippingAddress: { addressLine1: "...", city: "Bogota", phoneNumber: "...", region: "Cundinamarca", country: "CO" },
+      });
+
+      console.log("[wompi] opening", {
+        ...freeze,
+        publicKey: PUBLIC_KEY?.slice(0, 10) + "...",
+        integrityPreview: integrity.slice(0, 10),
       });
 
       checkout.open((result: any) => {
@@ -83,7 +103,7 @@ export default function WompiButton({
     } finally {
       setLoading(false);
     }
-  }, [amountCOP, reference, publicKey, currency, redirectUrl]);
+  }, [amountCOP, reference, redirectUrl, expirationTime]);
 
   return (
     <button
@@ -95,7 +115,7 @@ export default function WompiButton({
         className
       }
     >
-      {loading ? "Abriendo…" : `Donar $${amountCOP.toLocaleString("es-CO")}`}
+      {loading ? "Abriendo…" : label}
     </button>
   );
 }
