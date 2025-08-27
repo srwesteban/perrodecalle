@@ -27,8 +27,9 @@ function DonationSectionComponent() {
     []
   );
 
+  // ⬇️ vuelve a la RAÍZ del comercio (no /gracias)
   const redirectUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/gracias` : undefined;
+    typeof window !== "undefined" ? window.location.origin : undefined;
 
   const buttonClass =
     "w-full h-16 rounded-xl bg-emerald-500 text-black font-semibold " +
@@ -50,7 +51,7 @@ function DonationSectionComponent() {
             key={cop}
             amountCOP={cop}
             reference={referenceBase}
-            redirectUrl={redirectUrl}   // opcional
+            redirectUrl={redirectUrl}   // vuelve a la raíz del dominio
             className={buttonClass}
           >
             <div className="leading-tight text-center px-2 w-full">
@@ -62,7 +63,7 @@ function DonationSectionComponent() {
 
         <CustomAmountButton
           referenceBase={referenceBase}
-          redirectUrl={redirectUrl}     // opcional
+          redirectUrl={redirectUrl}     // idem
           className={buttonClass}
         />
       </div>

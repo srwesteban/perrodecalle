@@ -16,7 +16,6 @@ export function ensureWompiReady(): Promise<void> {
   if (wompiReadyPromise) return wompiReadyPromise;
 
   wompiReadyPromise = new Promise<void>((resolve, reject) => {
-    // ¿Ya está disponible?
     // @ts-ignore
     if (window.WidgetCheckout) {
       resolve();
@@ -26,7 +25,7 @@ export function ensureWompiReady(): Promise<void> {
     const SRC = "https://checkout.wompi.co/widget.js";
     let script = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
 
-    // Poll liviano por si WidgetCheckout aparece antes del onload
+    // Poll por si WidgetCheckout aparece antes del onload
     let iv = window.setInterval(() => {
       // @ts-ignore
       if (window.WidgetCheckout) {
@@ -89,7 +88,7 @@ export async function openWompiCheckout(opts: {
   amountInCents: number;
   currency?: "COP";
   referenceBase: string;      // base + timestamp para unicidad
-  redirectUrl?: string;
+  redirectUrl?: string;       // si no lo pasas, vuelve a la URL actual
   expirationTimeISO?: string;
 }) {
   const currency = opts.currency ?? "COP";
@@ -111,7 +110,7 @@ export async function openWompiCheckout(opts: {
     reference,
     publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
     signature: { integrity },
-    ...(opts.redirectUrl ? { redirectUrl: opts.redirectUrl } : {}),
+    ...(opts.redirectUrl ? { redirectUrl: opts.redirectUrl } : {}), // raíz del comercio o no pasarla
     ...(opts.expirationTimeISO ? { expirationTime: opts.expirationTimeISO } : {}),
   });
 
@@ -125,7 +124,7 @@ type Props = {
   currency?: "COP";
   reference: string;               // base ref (se le agrega timestamp al abrir)
   expirationTimeISO?: string;
-  redirectUrl?: string;
+  redirectUrl?: string;            // pásala si quieres forzar volver a la raíz
   className?: string;
   children?: React.ReactNode;
 };

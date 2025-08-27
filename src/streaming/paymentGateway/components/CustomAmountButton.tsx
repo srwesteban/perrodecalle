@@ -6,7 +6,7 @@ type Props = {
   className?: string;
   minCOP?: number;
   maxCOP?: number;
-  redirectUrl?: string;
+  redirectUrl?: string;        // pásala si quieres forzar volver a la raíz
   expirationTimeISO?: string;
 };
 
