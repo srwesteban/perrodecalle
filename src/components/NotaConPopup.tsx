@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import qr from '../assets/img/qrnequi.png';
+
 export default function NotaConPopup() {
   const [open, setOpen] = useState(false); // 👈 aquí defines el state
 
@@ -46,7 +48,7 @@ export default function NotaConPopup() {
           {/* Imagen QR */}
           <div className="flex-1 flex items-center justify-center px-4">
             <img
-              src="src/assets/img/qrnequi.png" // 👈 pon tu QR aquí
+              src={qr} // 👈 pon tu QR aquí
               alt="QR para donar"
               className="max-h-[70vh] object-contain rounded-lg shadow-2xl"
             />
