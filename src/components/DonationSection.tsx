@@ -4,6 +4,7 @@ import WompiButton, {
 } from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
+import NotaConPopup from "./NotaConPopup";
 
 const AMOUNTS = [
   1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
@@ -34,7 +35,7 @@ function DonationSectionComponent() {
     typeof window !== "undefined" ? window.location.origin : undefined;
 
   const buttonClass =
-    "w-full h-16 rounded-xl bg-emerald-500 text-black font-semibold " +
+    "w-full h-10 rounded-xl bg-emerald-500 text-black font-semibold " +
     "hover:bg-emerald-400 active:bg-emerald-300 " +
     "shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_8px_24px_rgba(16,185,129,.25)] " +
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 " +
@@ -49,7 +50,7 @@ function DonationSectionComponent() {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {AMOUNTS.map((cop) => (
           <WompiButton
             key={cop}
@@ -74,19 +75,8 @@ function DonationSectionComponent() {
           redirectUrl={redirectUrl} // idem
           className={buttonClass}
         />
-        <p
-          className="
-            col-span-2 mt-2 px-3 py-2
-            text-sm sm:text-base leading-snug
-            text-yellow-200 font-medium text-center
-            bg-yellow-900/30 rounded-lg
-          "
-        >
-          ⚠️ Nota: A veces <span className="font-semibold">Nequi</span> puede
-          presentar fallas. Si ocurre, intenta con otro medio de pago
-          disponible.
-        </p>
       </div>
+        <NotaConPopup/>
 
       <div className="m-0">
         <SafeDonation />
