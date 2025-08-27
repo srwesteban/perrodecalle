@@ -1,101 +1,51 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// hooks/useDonations.ts (resumen)
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { formatCOP, safeTimeMs } from "../utils/format";
 
 export type Donation = {
   id: string;
+  provider: string | null;
+  transaction_id: string | null;
   reference: string;
-  status: "APPROVED" | "DECLINED" | "VOIDED" | "PENDING" | string;
+  status: string;                 // APPROVED | DECLINED | ...
   amount_in_cents: number | null;
+  currency: string | null;
   updated_at: string | null;
   created_at: string;
+  amountFormatted?: string;
 };
 
-type DonationView = Donation & { amountFormatted: string };
+const NF = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
-export function useDonations(limit = 50): DonationView[] {
+export function useDonations(limit = 50) {
   const [rows, setRows] = useState<Donation[]>([]);
-  const lastFetch = useRef<number>(0);
 
-  async function fetchLatest() {
-    try {
-      lastFetch.current = Date.now();
+  useEffect(() => {
+    (async () => {
       const { data, error } = await supabase
         .from("donations")
-        .select("id,reference,status,amount_in_cents,updated_at,created_at")
+        .select("id,provider,transaction_id,reference,status,amount_in_cents,currency,updated_at,created_at")
         .order("updated_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
         .limit(limit);
 
       if (error) {
-        console.error("supabase fetch error:", error);
+        console.error(error);
+        setRows([]);
         return;
       }
-      setRows((data ?? []).slice(0, limit));
-    } catch (e) {
-      console.error("fetchLatest error:", e);
-    }
-  }
 
-  useEffect(() => {
-    fetchLatest();
-
-    const ch = supabase
-      .channel("donations-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "donations" },
-        (payload) => {
-          const rec = (payload.new ?? payload.old) as Donation;
-
-          setRows((prev) => {
-            // DELETE: sácalo y corta
-            if (payload.eventType === "DELETE") {
-              return prev.filter((r) => r.id !== rec.id).slice(0, limit);
-            }
-
-            // UPSERT por id o reference
-            const i = prev.findIndex(
-              (r) => r.id === rec.id || r.reference === rec.reference
-            );
-            const next = i >= 0 ? [...prev] : [rec, ...prev];
-            if (i >= 0) next[i] = rec;
-
-            // Orden robusto por tiempo (toma updated_at o created_at, con fallback)
-            next.sort((a, b) => {
-              const ta = safeTimeMs(a.updated_at ?? a.created_at);
-              const tb = safeTimeMs(b.updated_at ?? b.created_at);
-              return tb - ta;
-            });
-
-            return next.slice(0, limit);
-          });
-        }
-      )
-      .subscribe((status) => {
-        // Si no queda SUBSCRIBED, intentamos refrescar
-        if (status !== "SUBSCRIBED") {
-          fetchLatest();
-        }
-      });
-
-    // Polling de respaldo cada 3s si no hubo eventos
-    const poll = setInterval(() => {
-      if (Date.now() - lastFetch.current > 3000) fetchLatest();
-    }, 3000);
-
-    return () => {
-      clearInterval(poll);
-      supabase.removeChannel(ch);
-    };
+      setRows(
+        (data ?? []).map((d) => ({
+          ...d,
+          amountFormatted:
+            d.amount_in_cents != null
+              ? NF.format(Math.round(d.amount_in_cents / 100))
+              : "—",
+        }))
+      );
+    })();
   }, [limit]);
 
-  return useMemo(
-    () =>
-      rows.map((r) => ({
-        ...r,
-        amountFormatted: `$${formatCOP((r.amount_in_cents ?? 0) / 100)}`,
-      })),
-    [rows]
-  );
+  return rows;
 }
