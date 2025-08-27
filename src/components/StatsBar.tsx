@@ -46,7 +46,7 @@ export default function StatsBar() {
         alt="MinTIC"
         loading="lazy"
         referrerPolicy="no-referrer"
-        sx={{ height: 22, width: "auto", flexShrink: 0, filter: "contrast(1.15) saturate(1.05)" }}
+        sx={{ height: 30, width: "auto", flexShrink: 0, filter: "contrast(1.15) saturate(1.05)" }}
       />
 
       {/* Texto centrado absoluto */}
