@@ -1,5 +1,7 @@
 import React, { memo, useMemo } from "react";
-import WompiButton, { formatCOP } from "../streaming/paymentGateway/components/WompiButton";
+import WompiButton, {
+  formatCOP,
+} from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 
@@ -40,9 +42,11 @@ function DonationSectionComponent() {
 
   return (
     <section className="space-y-3">
-      <header className="text-center mb-4 sm:mb-8 px-2">
+      <header className="text-center px-2">
         <h3 className="text-xl font-semibold tracking-tight">Apoya hoy</h3>
-        <p className="text-xs text-white/80">Cada aporte se convierte en alimento y cuidados. 💛</p>
+        <p className="text-xs text-white/80">
+          Cada aporte se convierte en alimento y cuidados. 💛
+        </p>
       </header>
 
       <div className="grid grid-cols-2 gap-2">
@@ -51,24 +55,40 @@ function DonationSectionComponent() {
             key={cop}
             amountCOP={cop}
             reference={referenceBase}
-            redirectUrl={redirectUrl}   // vuelve a la raíz del dominio
+            redirectUrl={redirectUrl} // vuelve a la raíz del dominio
             className={buttonClass}
           >
             <div className="leading-tight text-center px-2 w-full">
-              <div className="text-base font-semibold truncate">{formatCOP(cop)}</div>
-              <div className="text-[11px] opacity-90 truncate">{SUBS[cop] ?? "¡Gracias!"}</div>
+              <div className="text-base font-semibold truncate">
+                {formatCOP(cop)}
+              </div>
+              <div className="text-[11px] opacity-90 truncate">
+                {SUBS[cop] ?? "¡Gracias!"}
+              </div>
             </div>
           </WompiButton>
         ))}
 
         <CustomAmountButton
           referenceBase={referenceBase}
-          redirectUrl={redirectUrl}     // idem
+          redirectUrl={redirectUrl} // idem
           className={buttonClass}
         />
+        <p
+          className="
+            col-span-2 mt-2 px-3 py-2
+            text-sm sm:text-base leading-snug
+            text-yellow-200 font-medium text-center
+            bg-yellow-900/30 rounded-lg
+          "
+        >
+          ⚠️ Nota: A veces <span className="font-semibold">Nequi</span> puede
+          presentar fallas. Si ocurre, intenta con otro medio de pago
+          disponible.
+        </p>
       </div>
 
-      <div className="mt-2 mb-1 lg:mt-12">
+      <div className="m-0">
         <SafeDonation />
       </div>
     </section>
