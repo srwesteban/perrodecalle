@@ -1,170 +1,173 @@
-import { useCallback, useMemo, useRef } from "react";
+// src/streaming/paymentGateway/components/WompiButton.tsx
+import React, { useCallback } from "react";
 
-export function formatCOP(pesos: number) {
+/** Utils exportables */
+export function formatCOPFromCents(amountInCents: number) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
     maximumFractionDigits: 0,
-  }).format(pesos);
+  }).format(amountInCents / 100);
 }
 
-/** Espera hasta que window.WidgetCheckout exista, cargando el script si hace falta */
-let wompiReadyPromise: Promise<void> | null = null;
+/** Carga el script del widget una sola vez */
+async function ensureWompiScript(): Promise<void> {
+  if (typeof window === "undefined") return;
 
-export function ensureWompiReady(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (wompiReadyPromise) return wompiReadyPromise;
+  const id = "wompi-widget-js";
+  if (document.getElementById(id)) {
+    if ((window as any).WidgetCheckout) return;
+    await new Promise<void>((resolve) => {
+      const i = setInterval(() => {
+        if ((window as any).WidgetCheckout) {
+          clearInterval(i);
+          resolve();
+        }
+      }, 50);
+    });
+    return;
+  }
 
-  wompiReadyPromise = new Promise<void>((resolve, reject) => {
-    // @ts-ignore
-    if (window.WidgetCheckout) {
-      resolve();
-      return;
-    }
-
-    const SRC = "https://checkout.wompi.co/widget.js";
-    let script = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
-
-    // Poll por si WidgetCheckout aparece antes del onload
-    let iv = window.setInterval(() => {
-      // @ts-ignore
-      if (window.WidgetCheckout) {
-        window.clearInterval(iv);
-        resolve();
-      }
-    }, 30);
-
-    const done = () => {
-      try { window.clearInterval(iv); } catch {}
-      resolve();
-    };
-
-    const fail = (err: any) => {
-      try { window.clearInterval(iv); } catch {}
-      reject(err instanceof Error ? err : new Error(String(err)));
-    };
-
-    if (!script) {
-      script = document.createElement("script");
-      script.src = SRC;
-      script.async = true;
-      script.onload = done;
-      script.onerror = () => fail(new Error("No se pudo cargar widget.js de Wompi"));
-      document.head.appendChild(script);
-    } else {
-      script.addEventListener("load", done, { once: true });
-      script.addEventListener("error", () => fail(new Error("Fallo al cargar widget.js")), { once: true });
-    }
+  await new Promise<void>((resolve, reject) => {
+    const s = document.createElement("script");
+    s.id = id;
+    s.src = "https://checkout.wompi.co/widget.js";
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("No se pudo cargar widget.js de Wompi"));
+    document.head.appendChild(s);
   });
 
-  return wompiReadyPromise;
+  await new Promise<void>((resolve) => {
+    const i = setInterval(() => {
+      if ((window as any).WidgetCheckout) {
+        clearInterval(i);
+        resolve();
+      }
+    }, 50);
+  });
 }
 
+/** Llama a tu endpoint para obtener la firma (integrity) */
 async function fetchIntegrity(params: {
   reference: string;
-  amountInCents: number;
+  amount_in_cents: number;
   currency: string;
   expirationTimeISO?: string;
-}) {
+}): Promise<{ integrity: string }> {
   const r = await fetch("/api/wompi/integrity", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      reference: params.reference,
-      amountInCents: params.amountInCents,
-      currency: params.currency,
-      expirationTime: params.expirationTimeISO,
-    }),
+    body: JSON.stringify(params),
   });
-  const json = await r.json();
-  if (!json?.integrity) {
-    throw new Error("El backend no devolvió 'integrity'.");
+  if (!r.ok) {
+    const txt = await r.text().catch(() => "");
+    throw new Error(`No se pudo obtener integrity: ${txt}`);
   }
-  return json.integrity as string;
+  return r.json();
 }
 
-/** Punto único para abrir el widget (reutilizable por todos los componentes) */
+/** Abre el Widget de Wompi (y registra PENDING antes) */
 export async function openWompiCheckout(opts: {
-  amountInCents: number;
-  currency?: "COP";
-  referenceBase: string;      // base + timestamp para unicidad
-  redirectUrl?: string;       // si no lo pasas, vuelve a la URL actual
+  amountInCents: number;           // centavos
+  currency?: "COP" | "USD";
+  referenceBase: string;           // prefijo libre (p.ej. "DON")
+  redirectUrl?: string;
   expirationTimeISO?: string;
 }) {
-  const currency = opts.currency ?? "COP";
+  const currency = (opts.currency ?? "COP").toUpperCase();
+
+  const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY as string | undefined;
+  if (!publicKey) throw new Error("Falta VITE_WOMPI_PUBLIC_KEY");
+
+  await ensureWompiScript();
+
+  // Genera referencia única
   const reference = `${opts.referenceBase}-${Date.now()}`;
 
-  const integrity = await fetchIntegrity({
+  // 1) Registrar PENDING (no bloquea si falla)
+  try {
+    await fetch("/api/donations/pending", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: "wompi",
+        reference,
+        amount_in_cents: opts.amountInCents,
+        currency,
+      }),
+    });
+  } catch (e) {
+    console.warn("[donations] no se pudo guardar PENDING:", e);
+  }
+
+  // 2) Obtener integrity
+  const { integrity } = await fetchIntegrity({
     reference,
-    amountInCents: opts.amountInCents,
+    amount_in_cents: opts.amountInCents,
     currency,
     expirationTimeISO: opts.expirationTimeISO,
   });
 
-  await ensureWompiReady();
-
-  // @ts-ignore
+  // 3) Abrir widget
+  const WidgetCheckout = (window as any).WidgetCheckout;
   const checkout = new WidgetCheckout({
     currency,
     amountInCents: opts.amountInCents,
     reference,
-    publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
+    publicKey,
+    redirectUrl: opts.redirectUrl,
     signature: { integrity },
-    ...(opts.redirectUrl ? { redirectUrl: opts.redirectUrl } : {}), // raíz del comercio o no pasarla
-    ...(opts.expirationTimeISO ? { expirationTime: opts.expirationTimeISO } : {}),
   });
 
-  checkout.open((result: any) => {
-    console.log("Transaction:", result?.transaction);
+  checkout.open(function (result: any) {
+    console.log("[wompi:widget] result:", result);
+    // El estado final siempre lo dará el webhook
   });
 }
 
-type Props = {
-  amountCOP: number;
-  currency?: "COP";
-  reference: string;               // base ref (se le agrega timestamp al abrir)
-  expirationTimeISO?: string;
-  redirectUrl?: string;            // pásala si quieres forzar volver a la raíz
+/** Botón genérico */
+type ButtonProps = {
+  amountInCents: number;  // en centavos (150000 = $1.500)
+  currency?: "COP" | "USD";
+  referenceBase: string;
+  redirectUrl?: string;
   className?: string;
   children?: React.ReactNode;
+  expirationTimeISO?: string;
 };
 
 export default function WompiButton({
-  amountCOP,
+  amountInCents,
   currency = "COP",
-  reference,
-  expirationTimeISO,
+  referenceBase,
   redirectUrl,
+  expirationTimeISO,
   className = "",
   children,
-}: Props) {
-  const amountInCents = useMemo(() => Math.round(amountCOP * 100), [amountCOP]);
-  const openingRef = useRef(false);
-
-  const handleClick = useCallback(async () => {
-    if (openingRef.current) return;
-    openingRef.current = true;
+}: ButtonProps) {
+  const onClick = useCallback(async () => {
     try {
       await openWompiCheckout({
         amountInCents,
         currency,
-        referenceBase: reference,
-        expirationTimeISO,
+        referenceBase,
         redirectUrl,
+        expirationTimeISO,
       });
-    } finally {
-      openingRef.current = false;
+    } catch (e) {
+      alert((e as Error).message);
+      console.error(e);
     }
-  }, [amountInCents, currency, expirationTimeISO, reference, redirectUrl]);
+  }, [amountInCents, currency, referenceBase, redirectUrl, expirationTimeISO]);
 
   return (
     <button
       type="button"
-      onClick={handleClick}
-      className={className}
-      aria-label={`Donar ${formatCOP(amountCOP)}`}
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold ${className}`}
     >
-      {children ?? formatCOP(amountCOP)}
+      {children ?? `Donar ${formatCOPFromCents(amountInCents)}`}
     </button>
   );
 }
