@@ -21,6 +21,7 @@ import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
+import Wompi from "./streaming/paymentGateway/components/Wompi";
 
 function App() {
   const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
@@ -163,6 +164,7 @@ function App() {
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DonationSection />
+              <Wompi/>
             </div>
           </div>
 

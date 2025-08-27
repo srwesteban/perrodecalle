@@ -1,27 +1,25 @@
-// import { useMemo } from "react";
-// import WompiButton from "./WompiButton";
+import { useMemo } from "react";
+import WompiButtonFunciona from "./WompiButtonFunciona";
 
-// export default function Wompi() {
-//   // fija la referencia una sola vez
-//   const reference = useMemo(() => `DON-${Date.now()}`, []);
+export default function Wompi() {
+  const reference = useMemo(() => `DON-${Date.now()}`, []);
+  const redirectUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/gracias` : undefined;
 
-//   return (
-//     <div className="space-y-2">
-//       <h3 className="font-semibold">Donar</h3>
+  // Montos en pesos (se convierten a centavos más abajo)
+  const amounts = [1500, 2000, 5000, 10000, 20000, 65000];
 
-//       <WompiButton
-//         amountInCents={150000}          // ✅ $1.500 COP
-//         currency="COP"                  // ✅ mayúsculas
-//         reference={reference}           // ✅ debe coincidir con la firma
-//         redirectUrl={`${window.location.origin}/gracias`}
-//       />
-
-//       <WompiButton
-//         amountInCents={200000}          // ✅ $2.000 COP
-//         currency="COP"
-//         reference={reference}
-//         redirectUrl={`${window.location.origin}/gracias`}
-//       />
-//     </div>
-//   );
-// }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {amounts.map((cop) => (
+        <WompiButtonFunciona
+          key={cop}
+          amountInCents={cop * 100}   // 1.500 → 150000 centavos
+          currency="COP"
+          reference={reference}
+          redirectUrl={redirectUrl}
+        />
+      ))}
+    </div>
+  );
+}
