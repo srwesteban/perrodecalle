@@ -5,7 +5,7 @@ import WompiButton, {
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 import NotaConPopup from "./NotaConPopup";
-import NequiPayment from "../streaming/paymentGateway/components/NequiPayment";
+import NequiPopup from "./NequiPopup";
 
 const AMOUNTS = [
   1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
@@ -77,10 +77,8 @@ function DonationSectionComponent() {
           className={buttonClass}
         />
       </div>
-      <div>
-        <NequiPayment />
-      </div>
       {/* <NotaConPopup/> */}
+      <NequiPopup/>
 
       <div className="m-0">
         <SafeDonation />
