@@ -18,7 +18,7 @@ const SUBS: Record<number, string> = {
   10000: "2 comidas",
   20000: "Día completo",
   34900: "Cuidados y vet",
-  64900: "Bolsa concentrado",
+  64900: "Concentrado",
   100000: "Aporte grande",
   200000: "Aporte héroe",
   350000: "Aporte leyenda",
