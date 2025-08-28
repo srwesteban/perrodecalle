@@ -10,6 +10,16 @@ import {
 } from "ogl";
 import { useEffect, useRef } from "react";
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+import d1 from "../assets/img/dogs/d1.jpg";
+import d2 from "../assets/img/dogs/d2.jpg";
+import d3 from "../assets/img/dogs/d3.jpg";
+import d4 from "../assets/img/dogs/d4.jpg";
+import d5 from "../assets/img/dogs/d5.jpg";
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type GL = Renderer["gl"];
 
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
@@ -364,17 +374,14 @@ class App {
     bend: number = 1,
     borderRadius: number
   ) {
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     const defaultItems = [
-      { image: "src/assets/img/d1.jpg" },
-      { image: "src/assets/img/d2.jpg" },
-      { image: "src/assets/img/d3.jpg" },
-      { image: "src/assets/img/d4.jpg" },
-      { image: "src/assets/img/d5.jpg" },
+      { image: d1 },
+      { image: d2 },
+      { image: d3 },
+      { image: d4 },
+      { image: d5 },
     ];
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     const galleryItems = items && items.length ? items : defaultItems;
     this.mediasImages = galleryItems.concat(galleryItems);
     this.medias = this.mediasImages.map((data, index) => {
