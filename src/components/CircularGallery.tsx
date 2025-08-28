@@ -367,11 +367,11 @@ class App {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     const defaultItems = [
-      { image: "src/assets/img/dogs/d1.jpg" },
-      { image: "src/assets/img/dogs/d2.jpg" },
-      { image: "src/assets/img/dogs/d3.jpg" },
-      { image: "src/assets/img/dogs/d4.jpg" },
-      { image: "src/assets/img/dogs/d5.jpg" },
+      { image: "src/assets/img/d1.jpg" },
+      { image: "src/assets/img/d2.jpg" },
+      { image: "src/assets/img/d3.jpg" },
+      { image: "src/assets/img/d4.jpg" },
+      { image: "src/assets/img/d5.jpg" },
     ];
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -196,7 +196,7 @@ function App() {
               "min-h-0 flex flex-col",
             ].join(" ")}
           >
-            <p className="text-sm sm:text-base text-center font-semibold leading-none">
+            <p className="text-sm sm:text-base text-center font-semibold leading-none mt-2">
               Galería
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
