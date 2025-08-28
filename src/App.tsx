@@ -22,10 +22,15 @@ import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
-import CircularGallery from "./streaming/paymentGateway/components/CircularGallery";
+import CircularGallery from "./components/CircularGallery";
 
 function App() {
-  const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
+  const assetsReady = usePreloadImages([
+    portada,
+    perroGif,
+    imagenEncima,
+    click,
+  ]);
   const [introDone, setIntroDone] = useState(false);
 
   // ✅ Estado para encender/apagar confeti
@@ -61,7 +66,9 @@ function App() {
 
           const justApproved =
             row.status === "APPROVED" &&
-            (prev ? prev.status !== "APPROVED" : !celebrated.current.has(row.id));
+            (prev
+              ? prev.status !== "APPROVED"
+              : !celebrated.current.has(row.id));
 
           if (justApproved && !celebrated.current.has(row.id)) {
             celebrated.current.add(row.id);
@@ -186,20 +193,22 @@ function App() {
             className={[
               "order-4 bg-black/40 rounded-xl p-3",
               "md:col-span-2 md:row-span-2 md:col-start-1 md:row-start-6",
-              "min-h-0",
+              "min-h-0 flex flex-col",
             ].join(" ")}
           >
-              <CircularGallery bend={3} borderRadius={0.05} scrollEase={0.02}/>
-
+            <p className="text-sm sm:text-base text-center font-semibold leading-none">
+              Galería
+            </p>
+            <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
           </div>
+
+          {/* Social */}
+
           <div
-            className={[
-              "order-6 bg-black/40 rounded-xl p-3",
-              "md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-8",
-              "min-h-0",
-            ].join(" ")}
+            className="order-6 bg-black/40 rounded-xl p-4 flex flex-col gap-4
+             md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-8"
           >
-            {/* <Social /> */}
+            <MediaFeed/>
           </div>
         </div>
       </div>
