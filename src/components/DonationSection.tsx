@@ -4,7 +4,6 @@ import WompiButton, {
 } from "../streaming/paymentGateway/components/WompiButton";
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
-import NotaConPopup from "./NotaConPopup";
 import NequiPopup from "./NequiPopup";
 
 const AMOUNTS = [
