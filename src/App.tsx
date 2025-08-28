@@ -22,6 +22,7 @@ import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
+import CircularGallery from "./streaming/paymentGateway/components/CircularGallery";
 
 function App() {
   const assetsReady = usePreloadImages([portada, perroGif, imagenEncima, click]);
@@ -171,8 +172,8 @@ function App() {
           {/* Historial */}
           <div
             className={[
-              "order-4 bg-black/40 rounded-xl p-3 min-h-[220px]",
-              "md:col-span-3 md:row-span-3 md:col-start-2 md:row-start-6",
+              "order-5 bg-black/40 rounded-xl p-3 min-h-[220px]",
+              "md:col-span-3 md:row-span-3 md:col-start-3 md:row-start-6",
               "min-h-0",
             ].join(" ")}
           >
@@ -180,14 +181,25 @@ function App() {
           </div>
 
           {/* Media Feed */}
+
           <div
             className={[
-              "order-5 bg-black/40 rounded-xl p-3",
-              "md:col-span-1 md:row-span-3 md:col-start-1 md:row-start-6",
+              "order-4 bg-black/40 rounded-xl p-3",
+              "md:col-span-2 md:row-span-2 md:col-start-1 md:row-start-6",
               "min-h-0",
             ].join(" ")}
           >
-            <MediaFeed />
+              <CircularGallery bend={3} borderRadius={0.05} scrollEase={0.02}/>
+
+          </div>
+          <div
+            className={[
+              "order-6 bg-black/40 rounded-xl p-3",
+              "md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-8",
+              "min-h-0",
+            ].join(" ")}
+          >
+            {/* <Social /> */}
           </div>
         </div>
       </div>
