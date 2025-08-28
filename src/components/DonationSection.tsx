@@ -5,6 +5,7 @@ import WompiButton, {
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 import NotaConPopup from "./NotaConPopup";
+import NequiPayment from "../streaming/paymentGateway/components/NequiPayment";
 
 const AMOUNTS = [
   1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
@@ -35,14 +36,14 @@ function DonationSectionComponent() {
     typeof window !== "undefined" ? window.location.origin : undefined;
 
   const buttonClass =
-    "w-full h-10 rounded-xl bg-emerald-500 text-black font-semibold " +
+    "w-full h-14 rounded-xl bg-emerald-500 text-black font-semibold " +
     "hover:bg-emerald-400 active:bg-emerald-300 " +
     "shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_8px_24px_rgba(16,185,129,.25)] " +
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 " +
     "transition-all flex items-center justify-center overflow-hidden";
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 sm:mt-4">
       <header className="text-center px-2">
         <h3 className="text-xl font-semibold tracking-tight">Apoya hoy</h3>
         <p className="text-xs text-white/80">
@@ -50,7 +51,7 @@ function DonationSectionComponent() {
         </p>
       </header>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {AMOUNTS.map((cop) => (
           <WompiButton
             key={cop}
@@ -76,7 +77,10 @@ function DonationSectionComponent() {
           className={buttonClass}
         />
       </div>
-        <NotaConPopup/>
+      <div>
+        <NequiPayment />
+      </div>
+      {/* <NotaConPopup/> */}
 
       <div className="m-0">
         <SafeDonation />
