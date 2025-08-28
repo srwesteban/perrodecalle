@@ -5,6 +5,7 @@ import WompiButton, {
 import CustomAmountButton from "../streaming/paymentGateway/components/CustomAmountButton";
 import SafeDonation from "./SafeDonation";
 import NequiPopup from "./NequiPopup";
+import logowompi from "../assets/img/logowompi.png";
 
 const AMOUNTS = [
   1500, 2500, 5000, 10000, 20000, 34900, 64900, 100000, 200000, 350000, 500000,
@@ -42,11 +43,28 @@ function DonationSectionComponent() {
     "transition-all flex items-center justify-center overflow-hidden";
 
   return (
-    <section className="space-y-3 sm:mt-4">
-      <header className="text-center px-2">
-        <h3 className="text-xl font-semibold tracking-tight">Apoya hoy</h3>
-        <p className="text-xs text-white/80">
-          Cada aporte se convierte en alimento y cuidados. 💛
+    <section className="space-y-3 mb-1 mt-0 xs:mt-2">
+      <header className="text-center">
+        <div
+          className="
+      flex items-center justify-center gap-2 px-3 py-1
+      rounded-lg bg-white shadow-md
+    "
+        >
+          <span className="text-gray-800 font-semibold text-lg sm:text-xl mb-1">
+            Dona con:
+          </span>
+
+          <img
+            src={logowompi}
+            alt="Wompi"
+            className="h-5 sm:h-7 object-contain"
+          />
+        </div>
+
+        <p className="text-xs text-white/80 mt-1 sm:mt-2 max-w-md mx-auto">
+          Cada aporte se convierte en alimento y cuidados. 💛 Presiona en
+          cualquiera de los siguientes botones:
         </p>
       </header>
 
@@ -77,7 +95,7 @@ function DonationSectionComponent() {
         />
       </div>
       {/* <NotaConPopup/> */}
-      <NequiPopup/>
+      <NequiPopup />
 
       <div className="m-0">
         <SafeDonation />

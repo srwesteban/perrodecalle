@@ -165,7 +165,7 @@ function App() {
             ].join(" ")}
           >
             {/* Barra progreso */}
-            <div className="bg-black/40 rounded-xl p-3 h-[80px] mb-2 shrink-0 overflow-hidden">
+            <div className="bg-black/40 rounded-xl p-3 h-[80px] sm:mb-2 shrink-0 overflow-hidden">
               <ProgressBar goal={1000000} />
             </div>
 

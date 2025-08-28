@@ -17,7 +17,7 @@ export default function MediaFeed() {
       <Typography
         variant="h6"
         fontWeight="bold"
-        sx={{ mb: 2, textAlign: "center", flexShrink: 0 }}
+        sx={{  mb: 1, textAlign: "center", flexShrink: 0 }}
       >
         Redes sociales
       </Typography>
