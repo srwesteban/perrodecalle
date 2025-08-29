@@ -64,6 +64,7 @@ export default function NequiSimulado() {
           </code>
         )}
       </div>
+      
 
       <button
         onClick={sim}
