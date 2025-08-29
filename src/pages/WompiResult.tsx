@@ -23,6 +23,7 @@ export default function WompiResult() {
           {JSON.stringify(json, null, 2)}
         </pre>
       )}
+      <a href="/" className="text-emerald-600 underline block mt-4">Volver</a>
     </div>
   );
 }

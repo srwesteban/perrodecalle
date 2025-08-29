@@ -26,8 +26,17 @@ import CircularGallery from "./components/CircularGallery";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 import DonationsTable from "./components/DonationsTable";
 import WompiPayButton from "./components/WompiPayButton";
+import PayTest from "./pages/PayTest";
+import WompiResult from "./pages/WompiResult";
 
 function App() {
+  const hasId =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("id");
+
+  // Si la URL tiene ?id=... mostramos el resultado; si no, la página de prueba
+  return hasId ? <WompiResult /> : <PayTest />;
+
   const assetsReady = usePreloadImages([
     portada,
     perroGif,
@@ -191,7 +200,6 @@ function App() {
               <WompiPayButton amountCOP={100} referenceBase="don" />
               <WompiPayButton amountCOP={1000} referenceBase="don" />
               <WompiPayButton amountCOP={1500} referenceBase="don" />
-
             </div>
             <DonationsTable />
             <Historial />
