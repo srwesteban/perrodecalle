@@ -11,6 +11,7 @@ import StatsBar from "./components/StatsBar";
 import DonationSection from "./components/DonationSection";
 import Informacion from "./components/Informacion";
 import ConfettiController from "./components/ConfettiController";
+import { useCelebrateDonations } from "../hooks/useCelebrateDonations";
 
 import { usePreloadImages } from "./hooks/usePreloadImages";
 import { useEffect, useRef, useState } from "react";
@@ -24,7 +25,6 @@ import click from "./assets/img/click.gif";
 import CircularGallery from "./components/CircularGallery";
 
 function App() {
-
   const assetsReady = usePreloadImages([
     portada,
     perroGif,
@@ -42,7 +42,8 @@ function App() {
   useEffect(() => {
     const channel = supabase
       .channel("donations-status")
-      // Cuando insertan una donación nueva
+
+      // INSERT en donations (ya lo tienes)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "donations" },
@@ -55,7 +56,8 @@ function App() {
           }
         }
       )
-      // Cuando actualizan una donación existente
+
+      // UPDATE en donations (ya lo tienes)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "donations" },
@@ -76,6 +78,31 @@ function App() {
           }
         }
       )
+
+      // 👇 NUEVO: INSERT en donation_events => dispara confeti cuando llega evento APROBADO
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "donation_events" },
+        (payload: any) => {
+          const ev = payload.new as {
+            id?: string;
+            reference?: string;
+            tx_id?: string;
+            status?: string;
+          } | null;
+
+          if (!ev || ev.status !== "APPROVED") return;
+
+          // clave anti-duplicado: usa tx_id si existe, si no reference, si no id
+          const key = (ev.tx_id || ev.reference || ev.id || "").toString();
+          if (!key) return;
+          if (celebrated.current.has(key)) return;
+
+          celebrated.current.add(key);
+          setConfettiOn(true);
+        }
+      )
+
       .subscribe();
 
     return () => {
@@ -184,7 +211,6 @@ function App() {
               "min-h-0",
             ].join(" ")}
           >
-
             <Historial />
           </div>
 

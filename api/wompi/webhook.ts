@@ -1,83 +1,110 @@
 // /api/wompi/webhook.ts
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" }; // usa "edge" si así lo tienes y te funciona
 
-type WompiEvent = {
-  event?: string;
-  data?: {
-    transaction?: {
-      id?: string;
-      reference?: string;
-      amount_in_cents?: number;
-      currency?: string;
-      status?: "PENDING" | "APPROVED" | "DECLINED" | "VOIDED" | "ERROR";
-    };
-  };
-};
-
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "POST")
-    return new Response("Method not allowed", { status: 405 });
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const supabaseUrl = process.env.SUPABASE_URL!;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  if (!supabaseUrl || !serviceRole)
-    return new Response("server misconfigured", { status: 500 });
+  if (!supabaseUrl || !serviceRole) return res.status(500).send("server misconfigured");
 
   try {
-    const payload = (await req.json()) as WompiEvent;
-    const tx = payload?.data?.transaction;
-    if (!tx?.reference) return new Response("no reference", { status: 400 });
+    const event = req.body ?? (await getBody(req)); // por si Vercel no parsea
+    // Estructura típica: event.data.transaction
+    const tx = event?.data?.transaction ?? event?.transaction ?? null;
 
-    // UPSERT en donations (último estado)
-    const r1 = await fetch(`${supabaseUrl}/rest/v1/donations`, {
+    if (!tx) {
+      console.warn("[wompi-webhook] payload sin transaction", event);
+      return res.status(200).send("ok");
+    }
+
+    // Campos base
+    const reference = tx.reference ?? event?.data?.reference ?? null;
+    const status    = tx.status ?? "PENDING";
+    const amount    = Number(tx.amount_in_cents ?? tx.amountInCents ?? 0);
+    const currency  = tx.currency ?? "COP";
+    const tx_id     = tx.id ?? null;
+    const provider  = "WOMPI";
+
+    // customerData (cuando lo solicitas en el Widget/Web)
+    const cd = tx.customer_data ?? tx.customerData ?? {};
+    const customer_full_name     = cd.full_name ?? cd.fullName ?? null;
+    const customer_email         = cd.email ?? null;
+    const customer_phone         = cd.phone_number ?? cd.phoneNumber ?? null;
+    const customer_phone_prefix  = cd.phone_number_prefix ?? cd.phoneNumberPrefix ?? null;
+    const customer_legal_id      = cd.legal_id ?? cd.legalId ?? null;
+    const customer_legal_id_type = cd.legal_id_type ?? cd.legalIdType ?? null;
+
+    // shippingAddress (si lo usas)
+    const sa = tx.shipping_address ?? tx.shippingAddress ?? {};
+    const shipping_address_line1 = sa.address_line_1 ?? sa.addressLine1 ?? null;
+    const shipping_city          = sa.city ?? null;
+    const shipping_region        = sa.region ?? null;
+    const shipping_country       = sa.country ?? null;
+    const shipping_phone         = sa.phone_number ?? sa.phoneNumber ?? null;
+
+    // Fechas Wompi
+    const wompi_created_at   = tx.created_at ?? tx.createdAt ?? null;
+    const wompi_finalized_at = tx.finalized_at ?? tx.finalizedAt ?? null;
+
+    // Guarda un evento (append) con TODO lo importante
+    const body = {
+      donation_id: null,                  // si no lo manejas, déjalo null
+      reference,
+      tx_id,
+      status,
+      amount_in_cents: isFinite(amount) ? amount : null,
+      currency,
+      provider,
+      customer_full_name,
+      customer_email,
+      customer_phone,
+      customer_phone_prefix,
+      customer_legal_id,
+      customer_legal_id_type,
+      shipping_address_line1,
+      shipping_city,
+      shipping_region,
+      shipping_country,
+      shipping_phone,
+      wompi_created_at,
+      wompi_finalized_at,
+      wompi_payload: event ?? null,
+    };
+
+    await fetch(`${supabaseUrl}/rest/v1/donation_events`, {
       method: "POST",
       headers: {
         apikey: serviceRole,
         Authorization: `Bearer ${serviceRole}`,
         "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=representation",
+        Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        reference: tx.reference,
-        status: tx.status,
-        tx_id: tx.id,
-        amount_in_cents: tx.amount_in_cents,
-        currency: tx.currency ?? "COP",
-        provider: "wompi",
-      }),
+      body: JSON.stringify(body),
     });
 
-    if (!r1.ok) {
-      console.error("Supabase UPSERT error:", await r1.text());
-      return new Response("db error", { status: 500 });
-    }
+    // (opcional) también puedes actualizar la fila “donations” por reference si quieres reflejar el último estado
+    // await fetch(`${supabaseUrl}/rest/v1/donations?reference=eq.${encodeURIComponent(reference)}`, {
+    //   method: "PATCH",
+    //   headers: { apikey: serviceRole, Authorization: `Bearer ${serviceRole}`, "Content-Type": "application/json" },
+    //   body: JSON.stringify({ status, amount_in_cents: body.amount_in_cents, currency, tx_id }),
+    // });
 
-    // INSERT en donation_events (historial)
-    const r2 = await fetch(`${supabaseUrl}/rest/v1/donation_events`, {
-      method: "POST",
-      headers: {
-        apikey: serviceRole,
-        Authorization: `Bearer ${serviceRole}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        reference: tx.reference,
-        tx_id: tx.id,
-        status: tx.status,
-        amount_in_cents: tx.amount_in_cents,
-        currency: tx.currency ?? "COP",
-        provider: "wompi",
-      }),
-    });
-
-    if (!r2.ok) {
-      console.error("Supabase event insert error:", await r2.text());
-      return new Response("db error (event)", { status: 500 });
-    }
-
-    return new Response("ok", { status: 200 });
-  } catch (e) {
-    console.error("webhook error:", e);
-    return new Response("invalid", { status: 400 });
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error("[wompi-webhook] error", err);
+    res.status(200).send("ok"); // responde 200 siempre para no reintentos infinitos
   }
+}
+
+// util: lee body si no lo parsea el framework
+function getBody(req: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk: any) => (data += chunk));
+    req.on("end", () => {
+      try { resolve(JSON.parse(data || "{}")); } catch (e) { resolve({}); }
+    });
+    req.on("error", reject);
+  });
 }
