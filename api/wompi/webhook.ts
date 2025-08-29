@@ -9,27 +9,27 @@ type WompiEvent = {
       reference?: string;
       amount_in_cents?: number;
       currency?: string;
-      status?: "PENDING"|"APPROVED"|"DECLINED"|"VOIDED"|"ERROR";
+      status?: "PENDING" | "APPROVED" | "DECLINED" | "VOIDED" | "ERROR";
     };
   };
 };
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (req.method !== "POST")
+    return new Response("Method not allowed", { status: 405 });
 
   const supabaseUrl = process.env.SUPABASE_URL!;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  if (!supabaseUrl || !serviceRole) return new Response("server misconfigured", { status: 500 });
+  if (!supabaseUrl || !serviceRole)
+    return new Response("server misconfigured", { status: 500 });
 
   try {
     const payload = (await req.json()) as WompiEvent;
     const tx = payload?.data?.transaction;
     if (!tx?.reference) return new Response("no reference", { status: 400 });
 
-    // (opcional) validar firma del webhook con WOMPI_EVENTS_SECRET aquí
-
-    // UPSERT por 'reference'
-    const r = await fetch(`${supabaseUrl}/rest/v1/donations`, {
+    // UPSERT en donations (último estado)
+    const r1 = await fetch(`${supabaseUrl}/rest/v1/donations`, {
       method: "POST",
       headers: {
         apikey: serviceRole,
@@ -43,14 +43,36 @@ export default async function handler(req: Request): Promise<Response> {
         tx_id: tx.id,
         amount_in_cents: tx.amount_in_cents,
         currency: tx.currency ?? "COP",
-        provider: "wompi", // quítalo si no existe la columna
+        provider: "wompi",
       }),
     });
 
-    if (!r.ok) {
-      const t = await r.text();
-      console.error("Supabase UPSERT error:", t);
+    if (!r1.ok) {
+      console.error("Supabase UPSERT error:", await r1.text());
       return new Response("db error", { status: 500 });
+    }
+
+    // INSERT en donation_events (historial)
+    const r2 = await fetch(`${supabaseUrl}/rest/v1/donation_events`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRole,
+        Authorization: `Bearer ${serviceRole}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reference: tx.reference,
+        tx_id: tx.id,
+        status: tx.status,
+        amount_in_cents: tx.amount_in_cents,
+        currency: tx.currency ?? "COP",
+        provider: "wompi",
+      }),
+    });
+
+    if (!r2.ok) {
+      console.error("Supabase event insert error:", await r2.text());
+      return new Response("db error (event)", { status: 500 });
     }
 
     return new Response("ok", { status: 200 });
