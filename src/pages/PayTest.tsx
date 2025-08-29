@@ -10,7 +10,7 @@ export default function PayTest() {
       <h1 className="text-2xl font-bold">Prueba Wompi (Sandbox)</h1>
 
       <div className="flex flex-wrap gap-3">
-        <WompiPayButton amountCOP={5000}  referenceBase="don" redirectUrl={redirectUrl} />
+        <WompiPayButton amountCOP={1500}  referenceBase="don" redirectUrl={redirectUrl} />
         <WompiPayButton amountCOP={10000} referenceBase="don" redirectUrl={redirectUrl} />
         <WompiPayButton amountCOP={20000} referenceBase="don" redirectUrl={redirectUrl} />
       </div>

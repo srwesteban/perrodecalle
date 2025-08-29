@@ -1,11 +1,18 @@
 import { useMemo, useRef } from "react";
 
+// 👉 esto hace que TS reconozca WidgetCheckout sin quejarse
 declare global {
-  interface Window { WidgetCheckout?: any; }
+  interface Window {
+    WidgetCheckout: any;
+  }
 }
 
 function currencyCOP(v: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(v);
 }
 
 let wompiReady: Promise<void> | null = null;
@@ -15,7 +22,9 @@ function ensureWompiReady(): Promise<void> {
   wompiReady = new Promise<void>((resolve, reject) => {
     if (window.WidgetCheckout) return resolve();
     const SRC = "https://checkout.wompi.co/widget.js";
-    let script = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
+    let script = document.querySelector(
+      `script[src="${SRC}"]`
+    ) as HTMLScriptElement | null;
     const done = () => resolve();
     const fail = () => reject(new Error("No se pudo cargar Wompi widget"));
     if (!script) {
@@ -54,9 +63,23 @@ async function fetchIntegrity(args: {
   return j.integrity;
 }
 
+// helper para redirecciones absolutas
+function resolveRedirect(redirectUrl?: string) {
+  if (!redirectUrl) return undefined;
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : import.meta.env.VITE_SITE_URL || "";
+  const abs = redirectUrl.startsWith("http")
+    ? redirectUrl
+    : origin.replace(/\/$/, "") +
+      (redirectUrl.startsWith("/") ? redirectUrl : `/${redirectUrl}`);
+  return abs.startsWith("https://") ? abs : undefined;
+}
+
 type Props = {
   amountCOP: number;
-  referenceBase: string;     // base + timestamp
+  referenceBase: string; // base + timestamp
   label?: string;
   className?: string;
   redirectUrl?: string;
@@ -91,16 +114,19 @@ export default function WompiPayButton({
 
       await ensureWompiReady();
 
-      const checkout = new window.WidgetCheckout({
+      const cfg: any = {
         publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
         currency: "COP",
         amountInCents,
         reference,
         signature: { integrity },
-        ...(redirectUrl ? { redirectUrl } : {}),
-        ...(expirationTimeISO ? { expirationTime: expirationTimeISO } : {}),
-      });
+      };
 
+      const redirectAbs = resolveRedirect(redirectUrl);
+      if (redirectAbs) cfg.redirectUrl = redirectAbs;
+      if (expirationTimeISO) cfg.expirationTime = expirationTimeISO;
+
+      const checkout = new window.WidgetCheckout(cfg);
       checkout.open((result: any) => onResult?.(result?.transaction));
     } finally {
       opening.current = false;
