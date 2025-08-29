@@ -1,74 +1,46 @@
 // /api/wompi/webhook.ts
-export const config = { runtime: "nodejs" }; // usa "edge" si así lo tienes y te funciona
+export const config = { runtime: "edge" };
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   const supabaseUrl = process.env.SUPABASE_URL!;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  if (!supabaseUrl || !serviceRole) return res.status(500).send("server misconfigured");
+  if (!supabaseUrl || !serviceRole) return new Response("server misconfigured", { status: 500 });
 
   try {
-    const event = req.body ?? (await getBody(req)); // por si Vercel no parsea
+    const event = await req.json();
     // Estructura típica: event.data.transaction
-    const tx = event?.data?.transaction ?? event?.transaction ?? null;
+    const tx = event?.data?.transaction ?? null;
 
-    if (!tx) {
-      console.warn("[wompi-webhook] payload sin transaction", event);
-      return res.status(200).send("ok");
-    }
+    // si no hay transacción o NO está aprobada, no dispares nada
+    if (!tx || tx.status !== "APPROVED") return new Response("ok", { status: 200 });
 
-    // Campos base
-    const reference = tx.reference ?? event?.data?.reference ?? null;
-    const status    = tx.status ?? "PENDING";
-    const amount    = Number(tx.amount_in_cents ?? tx.amountInCents ?? 0);
-    const currency  = tx.currency ?? "COP";
-    const tx_id     = tx.id ?? null;
-    const provider  = "WOMPI";
-
-    // customerData (cuando lo solicitas en el Widget/Web)
-    const cd = tx.customer_data ?? tx.customerData ?? {};
-    const customer_full_name     = cd.full_name ?? cd.fullName ?? null;
-    const customer_email         = cd.email ?? null;
-    const customer_phone         = cd.phone_number ?? cd.phoneNumber ?? null;
-    const customer_phone_prefix  = cd.phone_number_prefix ?? cd.phoneNumberPrefix ?? null;
-    const customer_legal_id      = cd.legal_id ?? cd.legalId ?? null;
-    const customer_legal_id_type = cd.legal_id_type ?? cd.legalIdType ?? null;
-
-    // shippingAddress (si lo usas)
-    const sa = tx.shipping_address ?? tx.shippingAddress ?? {};
-    const shipping_address_line1 = sa.address_line_1 ?? sa.addressLine1 ?? null;
-    const shipping_city          = sa.city ?? null;
-    const shipping_region        = sa.region ?? null;
-    const shipping_country       = sa.country ?? null;
-    const shipping_phone         = sa.phone_number ?? sa.phoneNumber ?? null;
-
-    // Fechas Wompi
-    const wompi_created_at   = tx.created_at ?? tx.createdAt ?? null;
-    const wompi_finalized_at = tx.finalized_at ?? tx.finalizedAt ?? null;
-
-    // Guarda un evento (append) con TODO lo importante
     const body = {
-      donation_id: null,                  // si no lo manejas, déjalo null
-      reference,
-      tx_id,
-      status,
-      amount_in_cents: isFinite(amount) ? amount : null,
-      currency,
-      provider,
-      customer_full_name,
-      customer_email,
-      customer_phone,
-      customer_phone_prefix,
-      customer_legal_id,
-      customer_legal_id_type,
-      shipping_address_line1,
-      shipping_city,
-      shipping_region,
-      shipping_country,
-      shipping_phone,
-      wompi_created_at,
-      wompi_finalized_at,
+      donation_id: null,
+      reference: tx.reference ?? null,
+      tx_id: tx.id ?? null,
+      status: "APPROVED",
+      amount_in_cents: Number(tx.amount_in_cents ?? 0) || null,
+      currency: tx.currency ?? "COP",
+      provider: "WOMPI",
+
+      // opcionales (si vienen)
+      customer_full_name: tx.customer_data?.full_name ?? null,
+      customer_email: tx.customer_data?.email ?? null,
+      customer_phone: tx.customer_data?.phone_number ?? null,
+      customer_phone_prefix: tx.customer_data?.phone_number_prefix ?? null,
+      customer_legal_id: tx.customer_data?.legal_id ?? null,
+      customer_legal_id_type: tx.customer_data?.legal_id_type ?? null,
+
+      shipping_address_line1: tx.shipping_address?.address_line_1 ?? null,
+      shipping_city: tx.shipping_address?.city ?? null,
+      shipping_region: tx.shipping_address?.region ?? null,
+      shipping_country: tx.shipping_address?.country ?? null,
+      shipping_phone: tx.shipping_address?.phone_number ?? null,
+
+      wompi_created_at: tx.created_at ?? null,
+      wompi_finalized_at: tx.finalized_at ?? null,
       wompi_payload: event ?? null,
     };
 
@@ -83,28 +55,26 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify(body),
     });
 
-    // (opcional) también puedes actualizar la fila “donations” por reference si quieres reflejar el último estado
-    // await fetch(`${supabaseUrl}/rest/v1/donations?reference=eq.${encodeURIComponent(reference)}`, {
-    //   method: "PATCH",
-    //   headers: { apikey: serviceRole, Authorization: `Bearer ${serviceRole}`, "Content-Type": "application/json" },
-    //   body: JSON.stringify({ status, amount_in_cents: body.amount_in_cents, currency, tx_id }),
-    // });
-
-    res.status(200).send("ok");
-  } catch (err) {
-    console.error("[wompi-webhook] error", err);
-    res.status(200).send("ok"); // responde 200 siempre para no reintentos infinitos
-  }
-}
-
-// util: lee body si no lo parsea el framework
-function getBody(req: any): Promise<any> {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk: any) => (data += chunk));
-    req.on("end", () => {
-      try { resolve(JSON.parse(data || "{}")); } catch (e) { resolve({}); }
+    // (opcional) sincroniza tabla principal
+    await fetch(`${supabaseUrl}/rest/v1/donations?reference=eq.${encodeURIComponent(body.reference ?? "")}`, {
+      method: "PATCH",
+      headers: {
+        apikey: serviceRole,
+        Authorization: `Bearer ${serviceRole}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: "APPROVED",
+        amount_in_cents: body.amount_in_cents,
+        currency: body.currency,
+        tx_id: body.tx_id,
+      }),
     });
-    req.on("error", reject);
-  });
+
+    return new Response("ok", { status: 200 });
+  } catch (e) {
+    console.error("[webhook] error", e);
+    // siempre 200 para que Wompi no reintente infinito
+    return new Response("ok", { status: 200 });
+  }
 }

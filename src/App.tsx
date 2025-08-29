@@ -6,7 +6,6 @@ import SplashScreen from "./components/SplashScreen";
 import LiveVideo from "./components/LiveVideo";
 import MediaFeed from "./components/MediaFeed";
 import ProgressBar from "./components/ProgressBar";
-import Historial from "./components/Historial";
 import StatsBar from "./components/StatsBar";
 import DonationSection from "./components/DonationSection";
 import Informacion from "./components/Informacion";
@@ -22,6 +21,7 @@ import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
 import CircularGallery from "./components/CircularGallery";
+import Historial from "./components/Historial";
 
 function App() {
   const assetsReady = usePreloadImages([
@@ -42,66 +42,37 @@ function App() {
     const channel = supabase
       .channel("donations-status")
 
-      // INSERT en donations (ya lo tienes)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "donations" },
-        (payload: any) => {
-          const row = payload.new;
-          if (!row) return;
-          if (row.status === "APPROVED" && !celebrated.current.has(row.id)) {
-            celebrated.current.add(row.id);
-            setConfettiOn(true);
-          }
-        }
-      )
-
-      // UPDATE en donations (ya lo tienes)
+      // A) donations: transición a APPROVED
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "donations" },
         (payload: any) => {
-          const row = payload.new;
-          const prev = payload.old;
-          if (!row) return;
-
-          const justApproved =
-            row.status === "APPROVED" &&
-            (prev
-              ? prev.status !== "APPROVED"
-              : !celebrated.current.has(row.id));
-
-          if (justApproved && !celebrated.current.has(row.id)) {
-            celebrated.current.add(row.id);
-            setConfettiOn(true);
+          const row = payload.new,
+            prev = payload.old;
+          if (row?.status === "APPROVED" && prev?.status !== "APPROVED") {
+            const key = row.id || row.reference;
+            if (!celebrated.current.has(key)) {
+              celebrated.current.add(key);
+              setConfettiOn(true);
+            }
           }
         }
       )
 
-      // 👇 NUEVO: INSERT en donation_events => dispara confeti cuando llega evento APROBADO
+      // B) donation_events: INSERT APPROVED
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "donation_events" },
         (payload: any) => {
-          const ev = payload.new as {
-            id?: string;
-            reference?: string;
-            tx_id?: string;
-            status?: string;
-          } | null;
-
-          if (!ev || ev.status !== "APPROVED") return;
-
-          // clave anti-duplicado: usa tx_id si existe, si no reference, si no id
-          const key = (ev.tx_id || ev.reference || ev.id || "").toString();
-          if (!key) return;
-          if (celebrated.current.has(key)) return;
-
-          celebrated.current.add(key);
-          setConfettiOn(true);
+          const ev = payload.new;
+          if (ev?.status !== "APPROVED") return;
+          const key = ev.tx_id || ev.reference || ev.id;
+          if (!celebrated.current.has(key)) {
+            celebrated.current.add(key);
+            setConfettiOn(true);
+          }
         }
       )
-
       .subscribe();
 
     return () => {

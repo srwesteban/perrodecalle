@@ -1,56 +1,73 @@
 import { memo } from "react";
-import useDonationHistory from "../../hooks/useDonationHistory";
+import useDonationHistory from "../../hooks/useDonationHistory"; // 👈 el hook que te preparé
 
-function Badge({ estado }: { estado: string }) {
-  const map: Record<string, string> = {
-    Aprobada: "bg-green-100 text-green-800",
-    Rechazada: "bg-red-100 text-red-800",
-    Pendiente: "bg-yellow-100 text-yellow-800",
-    Anulada: "bg-gray-100 text-gray-800",
-    Error: "bg-orange-100 text-orange-800",
-  };
-  const cls = map[estado] ?? "bg-slate-100 text-slate-800";
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {estado}
-    </span>
-  );
+function traducirEstado(estado: string) {
+  switch (estado) {
+    case "APPROVED": return "Aprobada";
+    case "DECLINED": return "Rechazada";
+    case "PENDING":  return "Pendiente";
+    case "VOIDED":   return "Anulada";
+    case "ERROR":    return "Error";
+    default: return estado;
+  }
 }
 
 function HistorialBase() {
+  // ✅ ahora lee de la vista/history (último evento por referencia)
   const rows = useDonationHistory(50);
 
   return (
-    <div className="w-full">
-      <h3 className="text-white/90 font-semibold mb-2">Historial</h3>
+    <div className="flex flex-col h-full bg-black/40 rounded-xl p-3">
+      <p className="font-bold mb-2">📜 Historial de Donaciones</p>
 
-      <ul className="divide-y divide-white/10 rounded-lg bg-white/5 backdrop-blur">
+      {/* Encabezados */}
+      <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-400 border-b border-gray-600 pb-1 mb-2">
+        <span>Nombre</span>
+        <span>Estado</span>
+        <span>Monto</span>
+        <span>Fecha</span>
+      </div>
+
+      <ul className="flex-1 overflow-auto space-y-1 text-sm text-gray-300 pr-2">
         {rows.map((r) => (
-          <li key={r.id} className="px-3 py-2 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              {/* Nombre */}
-              <p className="text-sm font-semibold text-white truncate">
-                {r.nombre}
-              </p>
-              {/* Fecha */}
-              <p className="text-xs text-white/60">{r.fechaLabel}</p>
-            </div>
+          <li
+            key={r.id}
+            className="grid grid-cols-4 gap-3 items-center border-b border-gray-700/50 py-1"
+          >
+            {/* Nombre o correo */}
+            <span className="truncate">
+              {r.nombre || r.customer_name || "Anónimo"}
+            </span>
 
             {/* Estado */}
-            <div className="flex-shrink-0">
-              <Badge estado={r.estadoLabel} />
-            </div>
+            <span
+              className={
+                r.status === "APPROVED"
+                  ? "text-emerald-400"
+                  : r.status === "DECLINED"
+                  ? "text-rose-400"
+                  : r.status === "VOIDED"
+                  ? "text-yellow-400"
+                  : r.status === "ERROR"
+                  ? "text-red-400"
+                  : "text-amber-300"
+              }
+            >
+              {traducirEstado(r.status)}
+            </span>
 
             {/* Monto */}
-            <div className="flex-shrink-0 text-right">
-              <p className="text-sm font-semibold text-white">{r.montoLabel}</p>
-              <p className="text-[11px] text-white/50">{r.currency || "COP"}</p>
-            </div>
+            <span>{r.montoLabel}</span>
+
+            {/* Fecha */}
+            <span className="text-gray-400 text-xs">{r.fechaLabel}</span>
           </li>
         ))}
 
         {rows.length === 0 && (
-          <li className="text-gray-300 text-center py-3">Sin donaciones aún</li>
+          <li className="text-gray-400 text-center py-2">
+            Sin donaciones aún
+          </li>
         )}
       </ul>
     </div>
