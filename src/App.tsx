@@ -140,7 +140,7 @@ function App() {
 
             {/* Contenedor del video */}
             <div className="flex-1 min-h-0">
-              <LiveVideo src="https://www.youtube.com/watch?v=XIFr42RPPLA&list=RDXIFr42RPPLA" />
+              <LiveVideo src="https://www.youtube.com/watch?v=BIZKDSkiL-c&ab_channel=williamesteban" />
             </div>
           </div>
 
