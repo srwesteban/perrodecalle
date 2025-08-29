@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "vercel dev --port 8080",
-    "dev:all": "concurrently -n API,WEB -c blue,green \"npm:dev:api\" \"npm:dev\"",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -22,7 +20,6 @@
     "googleapis": "^156.0.0",
     "ogl": "^1.0.11",
     "react": "^19.1.1",
-    "react-canvas-confetti": "^2.0.7",
     "react-dom": "^19.1.1",
     "tailwindcss": "^4.1.12"
   },
@@ -32,13 +29,13 @@
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.1",
-    "concurrently": "^9.0.1",
+    "@vitejs/plugin-react-swc": "^4.0.0",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
-    "vercel": "^39.1.0",
+    "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
   }
 }

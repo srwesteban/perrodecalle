@@ -1,46 +1,41 @@
 // /api/wompi/integrity.ts
-import { createHash } from "crypto";
-
-// Util para leer JSON en Vercel Node Functions
-async function readJSON(req: any) {
-  if (req.body) return typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  const raw = await new Promise<string>((resolve, reject) => {
-    let data = "";
-    req.on("data", (c: Buffer) => (data += c));
-    req.on("end", () => resolve(data));
-    req.on("error", reject);
-  });
-  return raw ? JSON.parse(raw) : {};
-}
+export const config = { runtime: "nodejs" };
+import crypto from "node:crypto";
 
 export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
   try {
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.setHeader("Allow", "POST");
-      return res.end("Method Not Allowed");
+    const {
+      reference,
+      amountInCents,
+      currency = "COP",
+      expirationTime, // ISO8601 opcional
+    } = req.body ?? {};
+
+    if (!reference || !amountInCents) {
+      return res.status(400).json({ error: "Missing fields" });
     }
 
-    const INTEGRITY_SECRET = process.env.WOMPI_INTEGRITY_SECRET;
-    if (!INTEGRITY_SECRET) {
-      res.statusCode = 500;
-      return res.end("Missing WOMPI_INTEGRITY_SECRET");
+    // Soporta ambos nombres por si tu .env usa el viejo
+    const integrityKey =
+      process.env.WOMPI_INTEGRITY_SECRET ?? process.env.WOMPI_INTEGRITY;
+
+    if (!integrityKey) {
+      return res.status(500).json({ error: "Missing WOMPI_INTEGRITY_SECRET env" });
     }
 
-    const { reference, amountInCents, currency, expirationTime } = await readJSON(req);
+    const ref = String(reference);
+    const amt = String(amountInCents); // en centavos
+    const cur = String(currency).toUpperCase();
 
-    if (!reference || !amountInCents || !currency) {
-      res.statusCode = 400;
-      return res.end("reference, amountInCents, currency son obligatorios");
-    }
+    const base = expirationTime
+      ? `${ref}${amt}${cur}${expirationTime}${integrityKey}`
+      : `${ref}${amt}${cur}${integrityKey}`;
 
-    const base = `${reference}${amountInCents}${currency}${expirationTime ? expirationTime : ""}${INTEGRITY_SECRET}`;
-    const integrity = createHash("sha256").update(base, "utf8").digest("hex");
-
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    return res.end(JSON.stringify({ integrity }));
-  } catch (err: any) {
-    res.statusCode = 500;
-    return res.end(err?.message ?? "Internal error");
+    const integrity = crypto.createHash("sha256").update(base).digest("hex");
+    res.status(200).json({ integrity });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
   }
 }
