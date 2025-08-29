@@ -9,12 +9,6 @@ export type Donation = {
   amount_in_cents: number | null;
   updated_at: string | null;
   created_at: string;
-  customer_name?: string | null;
-  customer_email?: string | null;
-  payment_method?: string | null;
-  bank?: string | null;
-  cus?: string | null;
-  description?: string | null;
 };
 
 const NF = new Intl.NumberFormat("es-CO");
@@ -27,12 +21,10 @@ export function useDonations(limit = 50) {
     lastFetch.current = Date.now();
     const { data } = await supabase
       .from("donations")
-      .select(
-        "id,reference,status,amount_in_cents,updated_at,created_at,customer_name,customer_email,payment_method,bank,cus,description"
-      )
+      .select("id,reference,status,amount_in_cents,updated_at,created_at")
       .order("updated_at", { ascending: false })
       .limit(limit);
-    setRows(data ?? []);
+    setRows((data ?? []).slice(0, limit));
   }
 
   useEffect(() => {

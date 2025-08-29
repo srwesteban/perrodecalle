@@ -7,44 +7,9 @@ type WompiEvent = {
     transaction?: {
       id?: string;
       reference?: string;
-      amountInCents?: number;
+      amount_in_cents?: number;
       currency?: string;
       status?: "PENDING" | "APPROVED" | "DECLINED" | "VOIDED" | "ERROR";
-
-      // 👇 extras
-      paymentMethodType?: string; // "CARD" | "PSE" | "NEQUI"
-      paymentMethod?: {
-        type?: string;
-        extra?: {
-          financial_institution?: string;
-        };
-      };
-
-      customerData?: {
-        fullName?: string;
-        email?: string;
-        phoneNumber?: string;
-        phoneNumberPrefix?: string;
-        legalId?: string;
-        legalIdType?: string;
-      };
-
-      shippingAddress?: {
-        addressLine1?: string;
-        city?: string;
-        region?: string;
-        country?: string;
-        phoneNumber?: string;
-        name?: string;
-      };
-
-      taxInCents?: {
-        vat?: number;
-        consumption?: number;
-      };
-
-      paymentDescription?: string;
-      cus?: string;
     };
   };
 };
@@ -76,17 +41,9 @@ export default async function handler(req: Request): Promise<Response> {
         reference: tx.reference,
         status: tx.status,
         tx_id: tx.id,
-        amount_in_cents: tx.amountInCents,
+        amount_in_cents: tx.amount_in_cents,
         currency: tx.currency ?? "COP",
         provider: "wompi",
-
-        // extras
-        payment_method: tx.paymentMethodType,
-        bank: tx.paymentMethod?.extra?.financial_institution,
-        customer_name: tx.customerData?.fullName,
-        customer_email: tx.customerData?.email,
-        cus: tx.cus,
-        description: tx.paymentDescription,
       }),
     });
 
@@ -107,7 +64,7 @@ export default async function handler(req: Request): Promise<Response> {
         reference: tx.reference,
         tx_id: tx.id,
         status: tx.status,
-        amount_in_cents: tx.amountInCents, // 👈 camelCase según la doc
+        amount_in_cents: tx.amount_in_cents,
         currency: tx.currency ?? "COP",
         provider: "wompi",
       }),
