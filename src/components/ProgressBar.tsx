@@ -1,90 +1,125 @@
+// src/components/ProgressBar.tsx
 import * as React from "react";
-import LinearProgress, { linearProgressClasses } from "@mui/material/LinearProgress";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { useDonations } from "../hooks/useDonations";
-import { formatCOP } from "../utils/format";
+import Typography from "@mui/material/Typography";
+import LinearProgress from "@mui/material/LinearProgress";
 
-const clamp0to100 = (x: number) => (Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : 0);
+// ⬇️ Usa la ruta que corresponda a tu proyecto:
+// import { useGoalProgress } from "../../hooks/useDonations"; // si /hooks está fuera de /src
+import { useGoalProgress } from "../hooks/useDonations"; // si /hooks está dentro de /src
 
-// Quita tildes, trim y pasa a mayúsculas
-const normalize = (s: unknown) =>
-  (String(s ?? "")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .trim()
-    .toUpperCase());
-
-// True si el estado representa aprobado (APPROVED, APROBADA, SUCCESS, PAID…)
-const isApproved = (status: unknown) => {
-  const s = normalize(status);
-  return s === "APPROVED" || s === "APROBADA" || s === "PAID" || s === "SUCCESS";
+type Props = {
+  /** Meta en COP. Puede venir como número o string (ej: "5.000.000" o "$5.000.000"). */
+  goalCOP: number | string;
+  /** Cuántas filas sumar para el progreso (histórico). */
+  sampleLimit?: number;
+  /** Título encima de la barra. */
+  title?: string;
 };
 
-// Convierte centavos a COP (entero) aunque venga en string o null
-const centsToCop = (cents: unknown) => {
-  const n = Number(cents);
-  return Number.isFinite(n) ? Math.max(0, Math.floor(n / 100)) : 0;
-};
+const NF = new Intl.NumberFormat("es-CO");
 
-type Props = { goal: number };
+const clamp0to100 = (x: number) =>
+  Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : 0;
+
+/** Convierte una meta en COP a número seguro, limpiando $, puntos y comas. */
+function parseCOP(input: number | string | undefined | null): number {
+  if (typeof input === "number") return Number.isFinite(input) ? input : 0;
+  const s = String(input ?? "");
+  const digits = s.replace(/[^\d]/g, ""); // deja solo dígitos
+  if (!digits) return 0;
+  return Number(digits);
+}
 
 function LinearProgressWithLabel({ value }: { value: number }) {
-  const safe = clamp0to100(value);
-  const label = safe >= 1 ? `${Math.round(safe)}%` : `${safe.toFixed(1)}%`;
-
+  const v = clamp0to100(value);
+  const label = v >= 1 ? `${Math.round(v)}%` : `${v.toFixed(1)}%`;
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <LinearProgress
-          variant="determinate"
-          value={safe}
-          sx={{
-            height: 14,
-            borderRadius: 7,
-            [`&.${linearProgressClasses.colorPrimary}`]: { backgroundColor: "#064e3b" },
-            [`& .${linearProgressClasses.bar}`]: {
-              borderRadius: 7,
-              background: "linear-gradient(90deg, #4ade80, #22c55e, #16a34a)",
-              boxShadow: "0 0 10px #22c55e",
-            },
-          }}
-        />
+        <LinearProgress variant="determinate" value={v} />
       </Box>
-      <Typography
-        variant="body2"
-        noWrap
-        sx={{ color: "#4ade80", fontWeight: "bold", maxWidth: 64, textAlign: "right", flexShrink: 0 }}
-      >
+      <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
         {label}
       </Typography>
     </Box>
   );
 }
 
-export default function ProgressBar({ goal }: Props) {
-  const rows = useDonations();
+export default function ProgressBar({
+  goalCOP,
+  sampleLimit = 500,
+  title = "Progreso",
+}: Props) {
+  // Meta segura en COP (número)
+  const metaCOP = React.useMemo(() => parseCOP(goalCOP), [goalCOP]);
 
-  const { totalCOP, pct } = React.useMemo(() => {
-    const list = Array.isArray(rows) ? rows : [];
-    const approved = list.filter((d) => isApproved((d as any).status));
-    const total = approved.reduce((acc, d: any) => acc + centsToCop(d.amount_in_cents), 0);
-    const safeGoal = Number.isFinite(goal) && goal > 0 ? goal : 0;
-    const rawPct = safeGoal > 0 ? (total / safeGoal) * 100 : 0;
-    return { totalCOP: total, pct: clamp0to100(rawPct) };
-  }, [rows, goal]);
+  // El hook trabaja en CENTAVOS
+  const goalInCents = React.useMemo(
+    () => Math.max(1, Math.floor(metaCOP * 100)),
+    [metaCOP]
+  );
+
+  const { percent, approvedCOP, loading, error, refetch } = useGoalProgress(
+    goalInCents,
+    sampleLimit
+  );
+
+  const safePercent = clamp0to100(percent ?? 0);
 
   return (
-    <Box sx={{ width: "100%", height: "100%", overflow: "hidden" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5, gap: 1, minWidth: 0 }}>
-        <Typography variant="body2" noWrap sx={{ minWidth: 0, flex: 1 }}>
-          Meta: ${formatCOP(goal)} COP
+    <Box sx={{ display: "grid", gap: 1.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 1,
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          {title}
         </Typography>
-        <Typography variant="body2" noWrap sx={{ fontWeight: "bold", maxWidth: "60%" }}>
-          Recaudado: ${formatCOP(totalCOP)} COP
+
+        {/* OJO: approvedCOP YA viene con $ → no agregues otro $ */}
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "right" }}>
+          Recaudado: <strong>{approvedCOP}</strong> / Meta:{" "}
+          <strong>{metaCOP > 0 ? `$${NF.format(metaCOP)}` : "—"}</strong>
         </Typography>
       </Box>
-      <LinearProgressWithLabel value={pct} />
+
+      {loading ? (
+        <Box sx={{ display: "grid", gap: 1 }}>
+          <LinearProgress />
+          <Typography variant="caption" color="text.secondary">
+            Cargando…
+          </Typography>
+        </Box>
+      ) : (
+        <LinearProgressWithLabel value={safePercent} />
+      )}
+
+      {error && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+          }}
+        >
+          <Typography variant="caption" color="error">
+            {String(error)}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ cursor: "pointer", textDecoration: "underline" }}
+            onClick={refetch}
+          >
+            Reintentar
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 }
