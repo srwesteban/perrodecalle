@@ -36,6 +36,7 @@ function App() {
 
   // Si la URL tiene ?id=... mostramos el resultado; si no, la página de prueba
   return hasId ? <WompiResult /> : <PayTest />;
+  
 
   const assetsReady = usePreloadImages([
     portada,
