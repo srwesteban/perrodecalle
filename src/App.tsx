@@ -23,6 +23,7 @@ import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
 import CircularGallery from "./components/CircularGallery";
+import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 
 function App() {
   const assetsReady = usePreloadImages([
@@ -143,7 +144,7 @@ function App() {
 
             {/* Contenedor del video */}
             <div className="flex-1 min-h-0">
-              <LiveVideo />
+              <LiveVideo src="https://www.youtube.com/watch?v=XIFr42RPPLA&list=RDXIFr42RPPLA" />
             </div>
           </div>
 
@@ -200,6 +201,7 @@ function App() {
               Dogs 🐶
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
+            <NequiSimulado/>
           </div>
 
           {/* Social */}
@@ -208,7 +210,7 @@ function App() {
             className="order-6 bg-black/40 rounded-xl p-4 flex flex-col gap-4
              md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-8"
           >
-            <MediaFeed/>
+            <MediaFeed />
           </div>
         </div>
       </div>

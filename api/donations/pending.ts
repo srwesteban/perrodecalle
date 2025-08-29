@@ -6,6 +6,7 @@ export default async function handler(req: Request) {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  
   try {
     const supabaseUrl = process.env.SUPABASE_URL!;
     const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
