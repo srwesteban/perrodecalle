@@ -24,7 +24,8 @@ import click from "./assets/img/click.gif";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
 import CircularGallery from "./components/CircularGallery";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
-import WompiTestButton from "./components/WompiTestButton";
+import DonationsTable from "./components/DonationsTable";
+import WompiPayButton from "./components/WompiPayButton";
 
 function App() {
   const assetsReady = usePreloadImages([
@@ -186,9 +187,15 @@ function App() {
               "min-h-0",
             ].join(" ")}
           >
-            <WompiTestButton amountCOP={1500} referenceBase="don-test" />
-            <Historial />
+            <div className="flex flex-wrap gap-3">
+              <WompiPayButton amountCOP={100} referenceBase="don" />
+              <WompiPayButton amountCOP={1000} referenceBase="don" />
+              <WompiPayButton amountCOP={1500} referenceBase="don" />
 
+            </div>
+            <DonationsTable />
+
+            {/* <Historial /> */}
           </div>
 
           {/* Media Feed */}
@@ -204,7 +211,7 @@ function App() {
               Dogs 🐶
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
-            <NequiSimulado/>
+            <NequiSimulado />
           </div>
 
           {/* Social */}

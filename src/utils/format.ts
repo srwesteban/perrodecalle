@@ -1,14 +1,11 @@
 // src/utils/format.ts
+// Igual al tuyo + un par de helpers opcionales
 export function formatCOP(n: number) {
-  // Fallback seguro si Intl falla o no existe
   try {
     if (typeof Intl !== "undefined" && Intl.NumberFormat) {
       return new Intl.NumberFormat("es-CO").format(n);
     }
-  } catch {
-    // ignore
-  }
-  // Manual: separadores de miles con puntos
+  } catch {}
   const int = Math.floor(isFinite(n) ? n : 0).toString();
   return int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
@@ -23,9 +20,8 @@ export function safeTimeMs(isoMaybe: string | null | undefined) {
   return isNaN(t) ? 0 : t;
 }
 
-export function clampPercent(x: number) {
-  if (!isFinite(x)) return 0;
-  if (x < 0) return 0;
-  if (x > 100) return 100;
-  return Math.floor(x);
+export function formatDateTime(isoMaybe: string | null | undefined) {
+  const ms = safeTimeMs(isoMaybe);
+  if (!ms) return "—";
+  return new Date(ms).toLocaleString("es-CO", { hour12: false });
 }

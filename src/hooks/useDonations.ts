@@ -11,7 +11,7 @@ export type Donation = {
   created_at: string;
 };
 
-type DonationView = Donation & { amountFormatted: string };
+export type DonationView = Donation & { amountFormatted: string };
 
 export function useDonations(limit = 50): DonationView[] {
   const [rows, setRows] = useState<Donation[]>([]);
@@ -49,7 +49,6 @@ export function useDonations(limit = 50): DonationView[] {
           const rec = (payload.new ?? payload.old) as Donation;
 
           setRows((prev) => {
-            // DELETE: sácalo y corta
             if (payload.eventType === "DELETE") {
               return prev.filter((r) => r.id !== rec.id).slice(0, limit);
             }
@@ -61,7 +60,7 @@ export function useDonations(limit = 50): DonationView[] {
             const next = i >= 0 ? [...prev] : [rec, ...prev];
             if (i >= 0) next[i] = rec;
 
-            // Orden robusto por tiempo (toma updated_at o created_at, con fallback)
+            // Orden robusto por tiempo
             next.sort((a, b) => {
               const ta = safeTimeMs(a.updated_at ?? a.created_at);
               const tb = safeTimeMs(b.updated_at ?? b.created_at);
@@ -73,13 +72,10 @@ export function useDonations(limit = 50): DonationView[] {
         }
       )
       .subscribe((status) => {
-        // Si no queda SUBSCRIBED, intentamos refrescar
-        if (status !== "SUBSCRIBED") {
-          fetchLatest();
-        }
+        if (status !== "SUBSCRIBED") fetchLatest();
       });
 
-    // Polling de respaldo cada 3s si no hubo eventos
+    // Poll de respaldo cada 3s
     const poll = setInterval(() => {
       if (Date.now() - lastFetch.current > 3000) fetchLatest();
     }, 3000);

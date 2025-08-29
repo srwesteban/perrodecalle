@@ -1,5 +1,10 @@
-// /src/components/WompiTestButton.tsx
 import { useMemo, useRef } from "react";
+
+declare global {
+  interface Window {
+    WidgetCheckout?: any;
+  }
+}
 
 function currencyCOP(v: number) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
@@ -11,7 +16,6 @@ function ensureWompiReady(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (wompiReady) return wompiReady;
   wompiReady = new Promise<void>((resolve, reject) => {
-    // @ts-ignore
     if (window.WidgetCheckout) return resolve();
     const SRC = "https://checkout.wompi.co/widget.js";
     let script = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
@@ -55,20 +59,24 @@ async function fetchIntegrity(args: {
 
 type Props = {
   amountCOP: number;
-  referenceBase: string; // se le agrega timestamp para unicidad
-  redirectUrl?: string; // opcional
-  expirationTimeISO?: string; // opcional
-  className?: string;
+  referenceBase: string;                // base + timestamp para unicidad
   label?: string;
+  className?: string;
+  redirectUrl?: string;                 // opcional
+  expirationTimeISO?: string;           // opcional
+  onResult?: (tx?: any) => void;
+  logAbandonment?: boolean;             // registra cierre sin pagar (default true)
 };
 
-export default function WompiTestButton({
+export default function WompiPayButton({
   amountCOP,
   referenceBase,
+  label,
+  className = "",
   redirectUrl,
   expirationTimeISO,
-  className = "",
-  label,
+  onResult,
+  logAbandonment = true,
 }: Props) {
   const amountInCents = useMemo(() => Math.round(amountCOP * 100), [amountCOP]);
   const opening = useRef(false);
@@ -76,16 +84,18 @@ export default function WompiTestButton({
   const onClick = async () => {
     if (opening.current) return;
     opening.current = true;
+
+    const reference = `${referenceBase}-${Date.now()}`;
     try {
-      const reference = `${referenceBase}-${Date.now()}`;
       const integrity = await fetchIntegrity({
         reference,
         amountInCents,
         currency: "COP",
         expirationTime: expirationTimeISO,
       });
+
       await ensureWompiReady();
-      // @ts-ignore
+
       const checkout = new window.WidgetCheckout({
         publicKey: import.meta.env.VITE_WOMPI_PUBLIC_KEY,
         currency: "COP",
@@ -95,8 +105,21 @@ export default function WompiTestButton({
         ...(redirectUrl ? { redirectUrl } : {}),
         ...(expirationTimeISO ? { expirationTime: expirationTimeISO } : {}),
       });
-      checkout.open((result: any) => {
-        console.log("Transaction:", result?.transaction);
+
+      checkout.open(async (result: any) => {
+        const tx = result?.transaction;
+        try {
+          if (!tx?.id && logAbandonment) {
+            // Log opcional de abandono; ignora error si no existe el endpoint
+            await fetch("/api/wompi/client-event", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reference, event: "WIDGET_CLOSED" }),
+            }).catch(() => {});
+          }
+        } finally {
+          onResult?.(tx);
+        }
       });
     } finally {
       opening.current = false;
@@ -104,7 +127,12 @@ export default function WompiTestButton({
   };
 
   return (
-    <button type="button" onClick={onClick} className={className} aria-label={`Donar ${currencyCOP(amountCOP)}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow ${className}`}
+      aria-label={`Donar ${currencyCOP(amountCOP)}`}
+    >
       {label ?? currencyCOP(amountCOP)}
     </button>
   );
