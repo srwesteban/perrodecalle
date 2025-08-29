@@ -186,8 +186,8 @@ function App() {
               "min-h-0",
             ].join(" ")}
           >
-            {/* <Historial /> */}
-            <WompiTestButton amountCOP={10000} referenceBase="don-test" />
+            <WompiTestButton amountCOP={1500} referenceBase="don-test" />
+            <Historial />
 
           </div>
 
