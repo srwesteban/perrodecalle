@@ -8,15 +8,15 @@ import {
   Texture,
   Transform,
 } from "ogl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-import d1 from "../assets/img/dogs/d1.jpg";
-import d2 from "../assets/img/dogs/d2.jpg";
-import d3 from "../assets/img/dogs/d3.jpg";
-import d4 from "../assets/img/dogs/d4.jpg";
-import d5 from "../assets/img/dogs/d5.jpg";
+import d1 from "../assets/img/dogs/d1.webp";
+import d2 from "../assets/img/dogs/d2.webp";
+import d3 from "../assets/img/dogs/d3.webp";
+import d4 from "../assets/img/dogs/d4.webp";
+import d5 from "../assets/img/dogs/d5.webp";
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -283,6 +283,8 @@ interface AppConfig {
   borderRadius?: number;
   scrollSpeed?: number;
   scrollEase?: number;
+  // NUEVO: callback cuando se clickea una imagen
+  onImageClick?: (src: string) => void;
 }
 
 class App {
@@ -312,9 +314,12 @@ class App {
   boundOnTouchDown!: (e: MouseEvent | TouchEvent) => void;
   boundOnTouchMove!: (e: MouseEvent | TouchEvent) => void;
   boundOnTouchUp!: () => void;
+  boundOnClick!: (e: MouseEvent) => void;
 
   isDown: boolean = false;
   start: number = 0;
+
+  onImageClick?: (src: string) => void;
 
   constructor(
     container: HTMLElement,
@@ -324,6 +329,7 @@ class App {
       borderRadius = 0,
       scrollSpeed = 2,
       scrollEase = 0.05,
+      onImageClick,
     }: AppConfig
   ) {
     document.documentElement.classList.remove("no-js");
@@ -331,6 +337,8 @@ class App {
     this.scrollSpeed = scrollSpeed;
     this.scroll = { ease: scrollEase, current: 0, target: 0, last: 0 };
     this.onCheckDebounce = debounce(this.onCheck.bind(this), 200);
+    this.onImageClick = onImageClick;
+
     this.createRenderer();
     this.createCamera();
     this.createScene();
@@ -369,6 +377,7 @@ class App {
     });
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////
   createMedias(
     items: { image: string }[] | undefined,
     bend: number = 1,
@@ -381,7 +390,7 @@ class App {
       { image: d4 },
       { image: d5 },
     ];
-
+    //////////////////////////////////////////////////////////////////////////////////////
     const galleryItems = items && items.length ? items : defaultItems;
     this.mediasImages = galleryItems.concat(galleryItems);
     this.medias = this.mediasImages.map((data, index) => {
@@ -456,6 +465,46 @@ class App {
     }
   }
 
+  /** Convierte coordenadas de click (px) a coords de mundo en el plano de render (viewport units) */
+  private screenToWorld(clientX: number, clientY: number) {
+    const rect = (this.renderer.gl.canvas as HTMLCanvasElement).getBoundingClientRect();
+    const xNorm = (clientX - rect.left) / rect.width; // 0..1
+    const yNorm = (clientY - rect.top) / rect.height; // 0..1
+    // centro en (0,0): x:[-w/2,w/2], y:[-h/2,h/2] (ojo: Y invertido)
+    const x = (xNorm - 0.5) * this.viewport.width;
+    const y = (0.5 - yNorm) * this.viewport.height;
+    return { x, y };
+  }
+
+  /** Click picking simple: prueba punto en rectángulo rotado de cada Mesh */
+  private onClick(e: MouseEvent) {
+    if (!this.medias || !this.medias.length) return;
+    const p = this.screenToWorld(e.clientX, e.clientY);
+
+    // Recorremos desde el final por si hay solapes recientes
+    for (let i = this.medias.length - 1; i >= 0; i--) {
+      const m = this.medias[i];
+      const mx = m.plane.position.x;
+      const my = m.plane.position.y;
+      const hw = m.plane.scale.x / 2;
+      const hh = m.plane.scale.y / 2;
+      const theta = m.plane.rotation.z; // z-rotation
+
+      // Transformar punto mundo -> espacio local del rect (des-rotar)
+      const dx = p.x - mx;
+      const dy = p.y - my;
+      const cos = Math.cos(-theta);
+      const sin = Math.sin(-theta);
+      const lx = dx * cos - dy * sin;
+      const ly = dx * sin + dy * cos;
+
+      if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) {
+        if (this.onImageClick) this.onImageClick(m.image);
+        break;
+      }
+    }
+  }
+
   update() {
     this.scroll.current = lerp(
       this.scroll.current,
@@ -476,6 +525,8 @@ class App {
     this.boundOnTouchDown = this.onTouchDown.bind(this);
     this.boundOnTouchMove = this.onTouchMove.bind(this);
     this.boundOnTouchUp = this.onTouchUp.bind(this);
+    this.boundOnClick = this.onClick.bind(this);
+
     window.addEventListener("resize", this.boundOnResize);
     window.addEventListener("mousewheel", this.boundOnWheel);
     window.addEventListener("wheel", this.boundOnWheel);
@@ -485,6 +536,8 @@ class App {
     window.addEventListener("touchstart", this.boundOnTouchDown);
     window.addEventListener("touchmove", this.boundOnTouchMove);
     window.addEventListener("touchend", this.boundOnTouchUp);
+
+    this.renderer.gl.canvas.addEventListener("click", this.boundOnClick);
   }
 
   destroy() {
@@ -498,6 +551,9 @@ class App {
     window.removeEventListener("touchstart", this.boundOnTouchDown);
     window.removeEventListener("touchmove", this.boundOnTouchMove);
     window.removeEventListener("touchend", this.boundOnTouchUp);
+    if (this.renderer && this.renderer.gl) {
+      this.renderer.gl.canvas.removeEventListener("click", this.boundOnClick);
+    }
     if (
       this.renderer &&
       this.renderer.gl &&
@@ -526,6 +582,10 @@ export default function CircularGallery({
   scrollEase = 0.05,
 }: CircularGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // NUEVO: estado del popup
+  const [popupImage, setPopupImage] = useState<string | null>(null);
+
   useEffect(() => {
     if (!containerRef.current) return;
     const app = new App(containerRef.current, {
@@ -534,14 +594,40 @@ export default function CircularGallery({
       borderRadius,
       scrollSpeed,
       scrollEase,
+      onImageClick: (src) => setPopupImage(src),
     });
     return () => app.destroy();
   }, [items, bend, borderRadius, scrollSpeed, scrollEase]);
 
   return (
-    <div
-      className="w-full h-[550px] overflow-hidden cursor-grab active:cursor-grabbing "
-      ref={containerRef}
-    />
+    <>
+      <div
+        className="w-full h-[550px] overflow-hidden cursor-grab active:cursor-grabbing"
+        ref={containerRef}
+      />
+      {popupImage && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center"
+          onClick={() => setPopupImage(null)}
+        >
+          <img
+            src={popupImage}
+            alt="preview"
+            className="max-w-[95%] max-h-[95%] object-contain rounded-xl shadow-2xl"
+          />
+          <button
+            className="absolute top-4 right-4 text-white text-3xl leading-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPopupImage(null);
+            }}
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </>
   );
 }

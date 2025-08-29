@@ -197,7 +197,7 @@ function App() {
             ].join(" ")}
           >
             <p className="text-sm sm:text-base text-center font-semibold leading-none mt-2">
-              Perritos de la fundacion 🐶
+              Dogs 🐶
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
           </div>
