@@ -27,10 +27,12 @@ export function useDonations(limit = 50) {
     lastFetch.current = Date.now();
     const { data } = await supabase
       .from("donations")
-      .select("id,reference,status,amount_in_cents,updated_at,created_at")
+      .select(
+        "id,reference,status,amount_in_cents,updated_at,created_at,customer_name,customer_email,payment_method,bank,cus,description"
+      )
       .order("updated_at", { ascending: false })
       .limit(limit);
-    setRows((data ?? []).slice(0, limit));
+    setRows(data ?? []);
   }
 
   useEffect(() => {

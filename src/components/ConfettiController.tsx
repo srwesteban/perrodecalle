@@ -1,4 +1,3 @@
-// src/components/ConfettiController.tsx
 import { useEffect, useRef, useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
 
@@ -13,13 +12,15 @@ type ConfettiFn = (opts: any) => void;
 export default function ConfettiController({ active, durationMs = 5000, onDone }: Props) {
   const confettiRef = useRef<ConfettiFn | null>(null);
   const [showMsg, setShowMsg] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const handleInit = (params: any) => {
     confettiRef.current = params?.confetti ?? null;
+    setReady(true); // ✅ marcar que ya está listo
   };
 
   useEffect(() => {
-    if (!active || !confettiRef.current) return;
+    if (!active || !ready || !confettiRef.current) return;
 
     setShowMsg(true);
 
@@ -44,7 +45,7 @@ export default function ConfettiController({ active, durationMs = 5000, onDone }
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [active, durationMs, onDone]);
+  }, [active, ready, durationMs, onDone]); // 👈 se vuelve a correr cuando está listo
 
   return (
     <>
