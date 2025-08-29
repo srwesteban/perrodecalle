@@ -21,13 +21,8 @@ import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
-import Wompi from "./streaming/paymentGateway/components/Wompi";
 import CircularGallery from "./components/CircularGallery";
-import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
-import DonationsTable from "./components/DonationsTable";
-import WompiPayButton from "./components/WompiPayButton";
-import PayTest from "./pages/PayTest";
-import WompiResult from "./pages/WompiResult";
+
 
 function App() {
 
@@ -179,7 +174,6 @@ function App() {
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DonationSection />
-              {/* <Wompi/> */}
             </div>
           </div>
 
@@ -191,12 +185,6 @@ function App() {
               "min-h-0",
             ].join(" ")}
           >
-            <div className="flex flex-wrap gap-3">
-              <WompiPayButton amountCOP={100} referenceBase="don" />
-              <WompiPayButton amountCOP={1000} referenceBase="don" />
-              <WompiPayButton amountCOP={1500} referenceBase="don" />
-            </div>
-            <DonationsTable />
             <Historial />
           </div>
 
@@ -213,7 +201,7 @@ function App() {
               Dogs 🐶
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
-            <NequiSimulado />
+            {/* <NequiSimulado /> */}
           </div>
 
           {/* Social */}
