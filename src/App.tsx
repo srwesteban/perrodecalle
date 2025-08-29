@@ -194,8 +194,7 @@ function App() {
 
             </div>
             <DonationsTable />
-
-            {/* <Historial /> */}
+            <Historial />
           </div>
 
           {/* Media Feed */}

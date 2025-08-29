@@ -1,16 +1,13 @@
 import { useMemo, useRef } from "react";
 
 declare global {
-  interface Window {
-    WidgetCheckout?: any;
-  }
+  interface Window { WidgetCheckout?: any; }
 }
 
 function currencyCOP(v: number) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
 }
 
-// Carga el script del widget si hace falta
 let wompiReady: Promise<void> | null = null;
 function ensureWompiReady(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
@@ -59,13 +56,12 @@ async function fetchIntegrity(args: {
 
 type Props = {
   amountCOP: number;
-  referenceBase: string;                // base + timestamp para unicidad
+  referenceBase: string;     // base + timestamp
   label?: string;
   className?: string;
-  redirectUrl?: string;                 // opcional
-  expirationTimeISO?: string;           // opcional
+  redirectUrl?: string;
+  expirationTimeISO?: string;
   onResult?: (tx?: any) => void;
-  logAbandonment?: boolean;             // registra cierre sin pagar (default true)
 };
 
 export default function WompiPayButton({
@@ -76,7 +72,6 @@ export default function WompiPayButton({
   redirectUrl,
   expirationTimeISO,
   onResult,
-  logAbandonment = true,
 }: Props) {
   const amountInCents = useMemo(() => Math.round(amountCOP * 100), [amountCOP]);
   const opening = useRef(false);
@@ -106,21 +101,7 @@ export default function WompiPayButton({
         ...(expirationTimeISO ? { expirationTime: expirationTimeISO } : {}),
       });
 
-      checkout.open(async (result: any) => {
-        const tx = result?.transaction;
-        try {
-          if (!tx?.id && logAbandonment) {
-            // Log opcional de abandono; ignora error si no existe el endpoint
-            await fetch("/api/wompi/client-event", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reference, event: "WIDGET_CLOSED" }),
-            }).catch(() => {});
-          }
-        } finally {
-          onResult?.(tx);
-        }
-      });
+      checkout.open((result: any) => onResult?.(result?.transaction));
     } finally {
       opening.current = false;
     }

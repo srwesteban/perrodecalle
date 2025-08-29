@@ -1,5 +1,3 @@
-// src/utils/format.ts
-// Igual al tuyo + un par de helpers opcionales
 export function formatCOP(n: number) {
   try {
     if (typeof Intl !== "undefined" && Intl.NumberFormat) {
@@ -10,7 +8,6 @@ export function formatCOP(n: number) {
   return int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// Asegura parseo consistente: si no hay 'Z' ni offset, asumimos UTC
 export function safeTimeMs(isoMaybe: string | null | undefined) {
   if (!isoMaybe) return 0;
   const s = String(isoMaybe);

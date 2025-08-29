@@ -53,14 +53,12 @@ export function useDonations(limit = 50): DonationView[] {
               return prev.filter((r) => r.id !== rec.id).slice(0, limit);
             }
 
-            // UPSERT por id o reference
             const i = prev.findIndex(
               (r) => r.id === rec.id || r.reference === rec.reference
             );
             const next = i >= 0 ? [...prev] : [rec, ...prev];
             if (i >= 0) next[i] = rec;
 
-            // Orden robusto por tiempo
             next.sort((a, b) => {
               const ta = safeTimeMs(a.updated_at ?? a.created_at);
               const tb = safeTimeMs(b.updated_at ?? b.created_at);
@@ -75,7 +73,6 @@ export function useDonations(limit = 50): DonationView[] {
         if (status !== "SUBSCRIBED") fetchLatest();
       });
 
-    // Poll de respaldo cada 3s
     const poll = setInterval(() => {
       if (Date.now() - lastFetch.current > 3000) fetchLatest();
     }, 3000);

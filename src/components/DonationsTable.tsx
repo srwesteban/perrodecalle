@@ -31,7 +31,9 @@ export default function DonationsTable() {
         <tbody className="text-sm">
           {rows.map((r) => (
             <tr key={r.id} className="border-t border-slate-100">
-              <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.updated_at ?? r.created_at)}</td>
+              <td className="px-3 py-2 whitespace-nowrap">
+                {formatDateTime(r.updated_at ?? r.created_at)}
+              </td>
               <td className="px-3 py-2 font-mono text-xs">{r.reference}</td>
               <td className="px-3 py-2">{r.amountFormatted}</td>
               <td className="px-3 py-2"><StatusBadge s={r.status} /></td>
