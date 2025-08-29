@@ -24,6 +24,7 @@ import click from "./assets/img/click.gif";
 import Wompi from "./streaming/paymentGateway/components/Wompi";
 import CircularGallery from "./components/CircularGallery";
 import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
+import WompiTestButton from "./components/WompiTestButton";
 
 function App() {
   const assetsReady = usePreloadImages([
@@ -185,7 +186,9 @@ function App() {
               "min-h-0",
             ].join(" ")}
           >
-            <Historial />
+            {/* <Historial /> */}
+            <WompiTestButton amountCOP={10000} referenceBase="don-test" />
+
           </div>
 
           {/* Media Feed */}
