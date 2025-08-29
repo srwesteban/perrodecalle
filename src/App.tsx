@@ -11,7 +11,6 @@ import StatsBar from "./components/StatsBar";
 import DonationSection from "./components/DonationSection";
 import Informacion from "./components/Informacion";
 import ConfettiController from "./components/ConfettiController";
-import { useCelebrateDonations } from "../hooks/useCelebrateDonations";
 
 import { usePreloadImages } from "./hooks/usePreloadImages";
 import { useEffect, useRef, useState } from "react";
