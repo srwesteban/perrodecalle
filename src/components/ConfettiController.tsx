@@ -1,65 +1,51 @@
-import { useEffect, useRef, useState } from "react";
-import ReactCanvasConfetti from "react-canvas-confetti";
+import { useEffect } from "react";
+import confetti from "canvas-confetti";
 
 type Props = {
   active: boolean;
-  durationMs?: number;      // default 5000
+  durationMs?: number;
   onDone?: () => void;
 };
 
-type ConfettiFn = (opts: any) => void;
-
-export default function ConfettiController({ active, durationMs = 5000, onDone }: Props) {
-  const confettiRef = useRef<ConfettiFn | null>(null);
-  const [showMsg, setShowMsg] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  const handleInit = (params: any) => {
-    confettiRef.current = params?.confetti ?? null;
-    setReady(true); // ✅ marcar que ya está listo
-  };
-
+export default function ConfettiController({
+  active,
+  durationMs = 3000,
+  onDone,
+}: Props) {
   useEffect(() => {
-    if (!active || !ready || !confettiRef.current) return;
+    if (!active) return;
 
-    setShowMsg(true);
+    const animationEnd = Date.now() + durationMs;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
 
-    const end = Date.now() + durationMs;
-    let raf = 0;
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min;
+    }
 
-    const frame = () => {
-      confettiRef.current?.({
-        particleCount: 18,
-        spread: 360,
-        startVelocity: 40,
-        ticks: 200,
-        origin: { x: Math.random(), y: Math.random() - 0.15 },
-      });
-      if (Date.now() < end) {
-        raf = requestAnimationFrame(frame);
-      } else {
-        setShowMsg(false);
+    const interval: any = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        clearInterval(interval);
         onDone?.();
+        return;
       }
-    };
 
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [active, ready, durationMs, onDone]); // 👈 se vuelve a correr cuando está listo
+      const particleCount = 50 * (timeLeft / durationMs);
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      });
+    }, 250);
 
-  return (
-    <>
-      <ReactCanvasConfetti
-        onInit={handleInit as any}
-        className="pointer-events-none fixed inset-0 w-full h-full z-[9999]"
-      />
-      {showMsg && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center">
-          <h1 className="text-center px-6 text-3xl sm:text-5xl md:text-6xl font-extrabold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)] animate-bounce">
-            💖 Gracias por tu donación 💖
-          </h1>
-        </div>
-      )}
-    </>
-  );
+    return () => clearInterval(interval);
+  }, [active, durationMs, onDone]);
+
+  return null; // no pinta nada, solo dispara confetti
 }

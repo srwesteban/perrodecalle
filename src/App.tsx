@@ -40,9 +40,25 @@ function App() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("donations-status")
+      .channel("donations-approved-only")
 
-      // A) donations: transición a APPROVED
+      // A) Nuevo registro APPROVED
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "donations" },
+        (payload: any) => {
+          const row = payload.new;
+          if (row?.status === "APPROVED") {
+            const key = row.id || row.reference;
+            if (!celebrated.current.has(key)) {
+              celebrated.current.add(key);
+              setConfettiOn(true);
+            }
+          }
+        }
+      )
+
+      // B) Transición hacia APPROVED
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "donations" },
@@ -55,21 +71,6 @@ function App() {
               celebrated.current.add(key);
               setConfettiOn(true);
             }
-          }
-        }
-      )
-
-      // B) donation_events: INSERT APPROVED
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "donation_events" },
-        (payload: any) => {
-          const ev = payload.new;
-          if (ev?.status !== "APPROVED") return;
-          const key = ev.tx_id || ev.reference || ev.id;
-          if (!celebrated.current.has(key)) {
-            celebrated.current.add(key);
-            setConfettiOn(true);
           }
         }
       )
@@ -163,13 +164,12 @@ function App() {
           >
             {/* Barra progreso */}
             <div className="bg-black/40 rounded-xl p-3 h-[80px] sm:mb-2 shrink-0 overflow-hidden">
-              <ProgressBar goalCOP={1000000} />
+              <ProgressBar goal={1000000} />
             </div>
 
             {/* Scroll interno */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DonationSection />
-              {/* <Wompi/> */}
             </div>
           </div>
 
@@ -185,7 +185,6 @@ function App() {
           </div>
 
           {/* Media Feed */}
-
           <div
             className={[
               "order-4 bg-black/40 rounded-xl p-3",
@@ -200,7 +199,6 @@ function App() {
           </div>
 
           {/* Social */}
-
           <div
             className="order-6 bg-black/40 rounded-xl p-4 flex flex-col gap-4
              md:col-span-2 md:row-span-1 md:col-start-1 md:row-start-8"
