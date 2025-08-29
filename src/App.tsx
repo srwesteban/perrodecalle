@@ -30,12 +30,7 @@ import PayTest from "./pages/PayTest";
 import WompiResult from "./pages/WompiResult";
 
 function App() {
-  const hasId =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).has("id");
 
-  // Si la URL tiene ?id=... mostramos el resultado; si no, la página de prueba
-  return hasId ? <WompiResult /> : <PayTest />;
 
   const assetsReady = usePreloadImages([
     portada,
