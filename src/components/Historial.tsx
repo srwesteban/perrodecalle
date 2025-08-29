@@ -21,7 +21,7 @@ function HistorialBase() {
 
       {/* Encabezados */}
       <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-400 border-b border-gray-600 pb-1 mb-2">
-        <span>Referencia</span>
+        <span>Nombre</span>
         <span>Estado</span>
         <span>Monto</span>
         <span>Fecha</span>
@@ -33,10 +33,10 @@ function HistorialBase() {
             key={r.id}
             className="grid grid-cols-4 gap-3 items-center border-b border-gray-700/50 py-1"
           >
-            {/* Referencia */}
-            <span className="truncate">{r.reference}</span>
+            {/* Nombre */}
+            <span className="truncate">{r.customer_name ?? "Anónimo"}</span>
 
-            {/* Estado traducido */}
+            {/* Estado */}
             <span
               className={
                 r.status === "APPROVED"
@@ -54,7 +54,7 @@ function HistorialBase() {
             {/* Monto */}
             <span>{r.amountFormatted}</span>
 
-            {/* Fecha → usa updated_at si existe, si no created_at */}
+            {/* Fecha */}
             <span className="text-gray-400 text-xs">
               {new Date(r.updated_at ?? r.created_at).toLocaleDateString("es-CO", {
                 day: "2-digit",

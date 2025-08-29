@@ -9,6 +9,12 @@ export type Donation = {
   amount_in_cents: number | null;
   updated_at: string | null;
   created_at: string;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  payment_method?: string | null;
+  bank?: string | null;
+  cus?: string | null;
+  description?: string | null;
 };
 
 const NF = new Intl.NumberFormat("es-CO");

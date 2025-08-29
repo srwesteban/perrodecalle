@@ -21,9 +21,7 @@ import portada from "./assets/img/fondo.webp";
 import perroGif from "./assets/img/PDCG.gif";
 import imagenEncima from "./assets/img/imgParche.png";
 import click from "./assets/img/click.gif";
-import Wompi from "./streaming/paymentGateway/components/Wompi";
 import CircularGallery from "./components/CircularGallery";
-import NequiSimulado from "./streaming/paymentGateway/components/NequiSimulado";
 
 function App() {
 
@@ -203,7 +201,6 @@ function App() {
               Dogs 🐶
             </p>
             <CircularGallery bend={0} borderRadius={0.05} scrollEase={0.02} />
-            <NequiSimulado />
           </div>
 
           {/* Social */}
