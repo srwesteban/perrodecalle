@@ -1,5 +1,6 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { useDonations } from "../hooks/useDonations";
+import ConfettiController from "./ConfettiController";
 
 function traducirEstado(estado: string) {
   switch (estado) {
@@ -14,12 +15,23 @@ function traducirEstado(estado: string) {
 
 function HistorialBase() {
   const rows = useDonations(50);
+  const [confettiActive, setConfettiActive] = useState(false);
+
+  // 👇 activar confetti si entra una transacción aprobada
+  useEffect(() => {
+    if (rows.length === 0) return;
+
+    const ultima = rows[0]; // la más reciente
+    if (ultima.status === "APPROVED") {
+      setConfettiActive(true);
+    }
+  }, [rows]);
 
   return (
     <div className="flex flex-col h-full bg-black/40 rounded-xl p-3">
       <p className="font-bold mb-2">📜 Historial de Donaciones</p>
 
-      {/* Encabezados */}
+      {/* Tabla simple */}
       <div className="grid grid-cols-4 gap-3 text-xs font-semibold text-gray-400 border-b border-gray-600 pb-1 mb-2">
         <span>Nombre</span>
         <span>Estado</span>
@@ -33,10 +45,7 @@ function HistorialBase() {
             key={r.id}
             className="grid grid-cols-4 gap-3 items-center border-b border-gray-700/50 py-1"
           >
-            {/* Nombre */}
             <span className="truncate">{r.customer_name ?? "Anónimo"}</span>
-
-            {/* Estado */}
             <span
               className={
                 r.status === "APPROVED"
@@ -50,11 +59,7 @@ function HistorialBase() {
             >
               {traducirEstado(r.status)}
             </span>
-
-            {/* Monto */}
             <span>{r.amountFormatted}</span>
-
-            {/* Fecha */}
             <span className="text-gray-400 text-xs">
               {new Date(r.updated_at ?? r.created_at).toLocaleDateString("es-CO", {
                 day: "2-digit",
@@ -73,6 +78,13 @@ function HistorialBase() {
           </li>
         )}
       </ul>
+
+      {/* 🎉 Confetti controlado */}
+      <ConfettiController
+        active={confettiActive}
+        durationMs={5000}
+        onDone={() => setConfettiActive(false)}
+      />
     </div>
   );
 }
