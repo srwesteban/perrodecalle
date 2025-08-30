@@ -29,7 +29,7 @@ export default function MediaFeed() {
         sx={{ flexShrink: 0 }}
       >
         {/* Facebook */}
-        <Button
+        {/* <Button
           onClick={() =>
             window.open(
               "https://facebook.com/veloelmono",
@@ -49,7 +49,7 @@ export default function MediaFeed() {
           }}
         >
           Facebook
-        </Button>
+        </Button> */}
 
         {/* WhatsApp */}
         <Button
